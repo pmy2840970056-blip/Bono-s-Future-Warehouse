@@ -45,6 +45,7 @@ export function AiGoalDialog({
   const [goalTitle, setGoalTitle] = useState("");
   const [tree, setTree] = useState<Tree | null>(null);
   const [color, setColor] = useState<BrickColor>(CYCLE[goalsCount % CYCLE.length]);
+  const [confirming, setConfirming] = useState(false);
 
   const decomposeFn = useServerFn(decomposeGoal);
 
@@ -80,6 +81,7 @@ export function AiGoalDialog({
     setGoalTitle("");
     setTree(null);
     setColor(CYCLE[goalsCount % CYCLE.length]);
+    setConfirming(false);
   }
 
   function updateSub(idx: number, title: string) {
@@ -123,11 +125,29 @@ export function AiGoalDialog({
     });
   }
 
-  const canImport =
-    !!tree &&
-    goalTitle.trim().length > 0 &&
-    tree.subgoals.length > 0 &&
-    tree.subgoals.every((s) => s.title.trim() && s.tasks.some((t) => t.trim()));
+  const cleanSubs =
+    tree?.subgoals
+      .map((s) => ({ title: s.title.trim(), tasks: s.tasks.map((t) => t.trim()).filter(Boolean) }))
+      .filter((s) => s.title && s.tasks.length > 0) ?? [];
+  const subCount = cleanSubs.length;
+  const taskCount = cleanSubs.reduce((n, s) => n + s.tasks.length, 0);
+  const canImport = !!tree && goalTitle.trim().length > 0 && subCount > 0;
+
+  const timeline: Array<{ date: Date; sub: string; task: string }> = [];
+  {
+    const start = new Date();
+    let i = 0;
+    for (const s of cleanSubs) {
+      for (const t of s.tasks) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        timeline.push({ date: d, sub: s.title, task: t });
+        i++;
+      }
+    }
+  }
+  const timelineFmt = (d: Date) =>
+    d.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", weekday: "short" });
 
   return (
     <Dialog
@@ -273,31 +293,109 @@ export function AiGoalDialog({
               ))}
             </div>
           )}
+          {tree && confirming && (
+            <div className="rounded-lg border-2 border-ink bg-accent/40 p-4 shadow-brick-sm space-y-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  即将创建
+                </p>
+                <p className="mt-1 text-sm">
+                  长期目标{" "}
+                  <span
+                    className={cn(
+                      "inline-block rounded border-2 border-ink px-1.5 py-0.5 text-xs font-bold",
+                      colorClass[color],
+                    )}
+                  >
+                    {goalTitle.trim()}
+                  </span>
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
+                  <span className="rounded-md border-2 border-ink bg-card px-2 py-1 shadow-brick-sm">
+                    {subCount} 个子目标
+                  </span>
+                  <span className="rounded-md border-2 border-ink bg-card px-2 py-1 shadow-brick-sm">
+                    {taskCount} 块每日任务
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  示例时间表 · 每天一块（可后续调整）
+                </p>
+                <ul className="space-y-1 text-xs">
+                  {timeline.slice(0, 6).map((row, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="w-20 shrink-0 rounded border border-ink bg-background px-1.5 py-0.5 text-center font-mono font-bold">
+                        {timelineFmt(row.date)}
+                      </span>
+                      <span className="truncate">
+                        <span className="text-muted-foreground">{row.sub} · </span>
+                        {row.task}
+                      </span>
+                    </li>
+                  ))}
+                  {timeline.length > 6 && (
+                    <li className="pl-[5.5rem] text-muted-foreground">
+                      …还有 {timeline.length - 6} 块，共 {timeline.length} 天
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                导入后目标和任务会保存到你的目标列表，任务不会自动放进今日待办 —— 你随时可以拖进来。
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="pt-2 border-t-2 border-ink/10">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="border-2 border-ink bg-background font-bold shadow-brick-sm"
-          >
-            取消
-          </Button>
-          <Button
-            onClick={() => importM.mutate()}
-            disabled={!canImport || importM.isPending}
-            className="border-2 border-ink bg-brick-2 text-ink font-bold shadow-brick"
-          >
-            {importM.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> 导入中…
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4" strokeWidth={3} /> 导入到我的目标
-              </>
-            )}
-          </Button>
+          {confirming ? (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => setConfirming(false)}
+                disabled={importM.isPending}
+                className="border-2 border-ink bg-background font-bold shadow-brick-sm"
+              >
+                返回修改
+              </Button>
+              <Button
+                onClick={() => importM.mutate()}
+                disabled={importM.isPending}
+                className="border-2 border-ink bg-brick-2 text-ink font-bold shadow-brick"
+              >
+                {importM.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> 导入中…
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" strokeWidth={3} /> 确认导入
+                  </>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="border-2 border-ink bg-background font-bold shadow-brick-sm"
+              >
+                取消
+              </Button>
+              <Button
+                onClick={() => setConfirming(true)}
+                disabled={!canImport}
+                className="border-2 border-ink bg-brick-2 text-ink font-bold shadow-brick"
+              >
+                预览并导入
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
