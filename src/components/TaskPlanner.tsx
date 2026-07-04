@@ -20,8 +20,10 @@ import {
   Sparkles,
   Target,
   Trash2,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AiGoalDialog } from "@/components/AiGoalDialog";
 import { useNavigate } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -417,6 +419,7 @@ export default function TaskPlanner() {
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
   const [isOver, setIsOver] = useState(false);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -550,6 +553,14 @@ export default function TaskPlanner() {
               <div className="hidden sm:block rounded-lg border-2 border-ink bg-background px-3 py-1.5 font-mono text-xs font-bold shadow-brick-sm">
                 {today}
               </div>
+              <button
+                onClick={() => setAiOpen(true)}
+                disabled={!userId}
+                className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-3 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50"
+              >
+                <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <span className="hidden sm:inline">AI 拆解</span>
+              </button>
               <div className="hidden md:block text-xs text-muted-foreground">{userEmail}</div>
               <button
                 onClick={handleSignOut}
@@ -586,15 +597,24 @@ export default function TaskPlanner() {
                 <div className="rounded-xl border-2 border-dashed border-ink/40 bg-card p-8 text-center">
                   <p className="mb-1 text-base font-bold">还没有目标</p>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    加一个长期目标，或者先载入示例看看效果
+                    让 AI 帮你把长期目标拆成一块块任务，或先载入示例看看效果
                   </p>
-                  <Button
-                    onClick={() => seed.mutate()}
-                    disabled={seed.isPending}
-                    className="border-2 border-ink bg-brick-2 text-ink font-bold shadow-brick-sm"
-                  >
-                    载入示例目标
-                  </Button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button
+                      onClick={() => setAiOpen(true)}
+                      className="border-2 border-ink bg-brick-3 text-ink font-bold shadow-brick-sm"
+                    >
+                      <Wand2 className="h-4 w-4" strokeWidth={2.5} /> AI 拆解一个目标
+                    </Button>
+                    <Button
+                      onClick={() => seed.mutate()}
+                      disabled={seed.isPending}
+                      variant="ghost"
+                      className="border-2 border-ink bg-background text-ink font-bold shadow-brick-sm"
+                    >
+                      载入示例
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -656,6 +676,15 @@ export default function TaskPlanner() {
           </div>
         )}
       </DragOverlay>
+
+      {userId && (
+        <AiGoalDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          userId={userId}
+          goalsCount={goals.length}
+        />
+      )}
     </DndContext>
   );
 }
