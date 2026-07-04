@@ -553,6 +553,14 @@ export default function TaskPlanner() {
               <div className="hidden sm:block rounded-lg border-2 border-ink bg-background px-3 py-1.5 font-mono text-xs font-bold shadow-brick-sm">
                 {today}
               </div>
+              <button
+                onClick={() => setAiOpen(true)}
+                disabled={!userId}
+                className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-3 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50"
+              >
+                <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <span className="hidden sm:inline">AI 拆解</span>
+              </button>
               <div className="hidden md:block text-xs text-muted-foreground">{userEmail}</div>
               <button
                 onClick={handleSignOut}
