@@ -1,24 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
+import TaskPlanner from "@/components/TaskPlanner";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "积木清单 · 把长期目标拆成今天的一块" },
+      {
+        name: "description",
+        content: "两栏式任务规划：左边拆解长期目标，右边今日待办。不知道今天做什么？从左边拖一块过来。",
+      },
+      { property: "og:title", content: "积木清单" },
+      { property: "og:description", content: "把长期目标拆成今天能做的一块任务。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: TaskPlanner,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
