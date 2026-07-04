@@ -14,7 +14,219 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_entries: {
+        Row: {
+          color_snapshot: string
+          created_at: string
+          done_at: string | null
+          entry_date: string
+          goal_title_snapshot: string
+          id: string
+          subgoal_title_snapshot: string
+          task_id: string | null
+          title_snapshot: string
+          user_id: string
+        }
+        Insert: {
+          color_snapshot: string
+          created_at?: string
+          done_at?: string | null
+          entry_date?: string
+          goal_title_snapshot: string
+          id?: string
+          subgoal_title_snapshot: string
+          task_id?: string | null
+          title_snapshot: string
+          user_id: string
+        }
+        Update: {
+          color_snapshot?: string
+          created_at?: string
+          done_at?: string | null
+          entry_date?: string
+          goal_title_snapshot?: string
+          id?: string
+          subgoal_title_snapshot?: string
+          task_id?: string | null
+          title_snapshot?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          archived_at: string | null
+          color: string
+          created_at: string
+          id: string
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          color?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          color?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          plan: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          plan?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          plan?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subgoals: {
+        Row: {
+          created_at: string
+          goal_id: string
+          id: string
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          id?: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subgoals_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          ai_generated: boolean
+          created_at: string
+          id: string
+          sort_order: number
+          subgoal_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_generated?: boolean
+          created_at?: string
+          id?: string
+          sort_order?: number
+          subgoal_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_generated?: boolean
+          created_at?: string
+          id?: string
+          sort_order?: number
+          subgoal_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_subgoal_id_fkey"
+            columns: ["subgoal_id"]
+            isOneToOne: false
+            referencedRelation: "subgoals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          reminder_time: string | null
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          reminder_time?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          reminder_time?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
