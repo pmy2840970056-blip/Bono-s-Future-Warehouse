@@ -597,15 +597,24 @@ export default function TaskPlanner() {
                 <div className="rounded-xl border-2 border-dashed border-ink/40 bg-card p-8 text-center">
                   <p className="mb-1 text-base font-bold">还没有目标</p>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    加一个长期目标，或者先载入示例看看效果
+                    让 AI 帮你把长期目标拆成一块块任务，或先载入示例看看效果
                   </p>
-                  <Button
-                    onClick={() => seed.mutate()}
-                    disabled={seed.isPending}
-                    className="border-2 border-ink bg-brick-2 text-ink font-bold shadow-brick-sm"
-                  >
-                    载入示例目标
-                  </Button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button
+                      onClick={() => setAiOpen(true)}
+                      className="border-2 border-ink bg-brick-3 text-ink font-bold shadow-brick-sm"
+                    >
+                      <Wand2 className="h-4 w-4" strokeWidth={2.5} /> AI 拆解一个目标
+                    </Button>
+                    <Button
+                      onClick={() => seed.mutate()}
+                      disabled={seed.isPending}
+                      variant="ghost"
+                      className="border-2 border-ink bg-background text-ink font-bold shadow-brick-sm"
+                    >
+                      载入示例
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -667,6 +676,15 @@ export default function TaskPlanner() {
           </div>
         )}
       </DragOverlay>
+
+      {userId && (
+        <AiGoalDialog
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          userId={userId}
+          goalsCount={goals.length}
+        />
+      )}
     </DndContext>
   );
 }
