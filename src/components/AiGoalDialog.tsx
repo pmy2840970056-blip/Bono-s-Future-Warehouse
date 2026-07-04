@@ -125,11 +125,29 @@ export function AiGoalDialog({
     });
   }
 
-  const canImport =
-    !!tree &&
-    goalTitle.trim().length > 0 &&
-    tree.subgoals.length > 0 &&
-    tree.subgoals.every((s) => s.title.trim() && s.tasks.some((t) => t.trim()));
+  const cleanSubs =
+    tree?.subgoals
+      .map((s) => ({ title: s.title.trim(), tasks: s.tasks.map((t) => t.trim()).filter(Boolean) }))
+      .filter((s) => s.title && s.tasks.length > 0) ?? [];
+  const subCount = cleanSubs.length;
+  const taskCount = cleanSubs.reduce((n, s) => n + s.tasks.length, 0);
+  const canImport = !!tree && goalTitle.trim().length > 0 && subCount > 0;
+
+  const timeline: Array<{ date: Date; sub: string; task: string }> = [];
+  {
+    const start = new Date();
+    let i = 0;
+    for (const s of cleanSubs) {
+      for (const t of s.tasks) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        timeline.push({ date: d, sub: s.title, task: t });
+        i++;
+      }
+    }
+  }
+  const timelineFmt = (d: Date) =>
+    d.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", weekday: "short" });
 
   return (
     <Dialog
