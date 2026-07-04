@@ -20,8 +20,10 @@ import {
   Sparkles,
   Target,
   Trash2,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AiGoalDialog } from "@/components/AiGoalDialog";
 import { useNavigate } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -417,6 +419,7 @@ export default function TaskPlanner() {
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
   const [isOver, setIsOver] = useState(false);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
