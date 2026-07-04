@@ -45,6 +45,7 @@ export function AiGoalDialog({
   const [goalTitle, setGoalTitle] = useState("");
   const [tree, setTree] = useState<Tree | null>(null);
   const [color, setColor] = useState<BrickColor>(CYCLE[goalsCount % CYCLE.length]);
+  const [confirming, setConfirming] = useState(false);
 
   const decomposeFn = useServerFn(decomposeGoal);
 
@@ -80,6 +81,7 @@ export function AiGoalDialog({
     setGoalTitle("");
     setTree(null);
     setColor(CYCLE[goalsCount % CYCLE.length]);
+    setConfirming(false);
   }
 
   function updateSub(idx: number, title: string) {
