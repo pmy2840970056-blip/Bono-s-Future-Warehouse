@@ -399,10 +399,11 @@ function DailyBrick({
   return (
     <div
       className={cn(
-        "group relative rounded-xl border-2 border-ink bg-card p-4 shadow-brick transition-all",
-        "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick-lg",
-        !animating && "animate-brick-drop",
-        task.done && "animate-brick-fade",
+        "group relative rounded-xl border-2 border-ink p-4 transition-all",
+        task.done
+          ? "bg-done/50 shadow-brick-sm opacity-70"
+          : "bg-card shadow-brick hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick-lg",
+        !animating && !task.done && "animate-brick-drop",
       )}
     >
       <div className="flex items-start gap-3">
