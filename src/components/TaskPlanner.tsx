@@ -375,7 +375,10 @@ function DailyBrick({
     >
       <div className="flex items-start gap-3">
         <button
-          onClick={() => onToggle(task.id)}
+          onClick={() => {
+            if (!task.done) sfxComplete();
+            onToggle(task.id);
+          }}
           className={cn(
             "mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 border-ink transition-all",
             "shadow-brick-sm hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
@@ -389,6 +392,7 @@ function DailyBrick({
             </svg>
           )}
         </button>
+
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex items-center gap-1.5 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
             <span className={cn("rounded border border-ink px-1.5 py-0.5", colorClass[task.color])}>
