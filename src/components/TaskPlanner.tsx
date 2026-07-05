@@ -56,8 +56,9 @@ import {
   unmarkDailyEntryDone,
   removeDailyEntry,
   seedSampleData,
+  updateDailyEntryPriority,
 } from "@/lib/planner-api";
-import type { BrickColor, DailyTask, Goal, LeafTask, SubGoal } from "@/lib/planner-types";
+import type { BrickColor, DailyTask, Goal, LeafTask, Priority, SubGoal } from "@/lib/planner-types";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,30 @@ const colorClass: Record<BrickColor, string> = {
   "brick-2": "bg-brick-2",
   "brick-3": "bg-brick-3",
   "brick-4": "bg-brick-4",
+};
+
+const PRIORITY_META: Record<Priority, { label: string; short: string; dot: string; ring: string; chip: string }> = {
+  1: {
+    label: "高优先级",
+    short: "高",
+    dot: "bg-red-500",
+    ring: "ring-red-500/60",
+    chip: "bg-red-100 text-red-700 border-red-500",
+  },
+  2: {
+    label: "中优先级",
+    short: "中",
+    dot: "bg-amber-400",
+    ring: "ring-amber-400/60",
+    chip: "bg-amber-100 text-amber-800 border-amber-500",
+  },
+  3: {
+    label: "低优先级",
+    short: "低",
+    dot: "bg-emerald-500",
+    ring: "ring-emerald-500/60",
+    chip: "bg-emerald-100 text-emerald-700 border-emerald-500",
+  },
 };
 const colorRing: Record<BrickColor, string> = {
   "brick-1": "before:bg-brick-1",
