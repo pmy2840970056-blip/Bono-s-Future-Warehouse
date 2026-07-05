@@ -411,6 +411,7 @@ function DailyBrick({
         <button
           onClick={() => {
             if (!task.done) sfxComplete();
+            else sfxClick();
             onToggle(task.id);
           }}
           className={cn(
@@ -418,7 +419,8 @@ function DailyBrick({
             "shadow-brick-sm hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
             task.done ? colorClass[task.color] : "bg-background",
           )}
-          aria-label="完成"
+          aria-label={task.done ? "取消完成" : "完成"}
+          title={task.done ? "点一下取消完成，放回今日待办" : "完成"}
         >
           {task.done && (
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="4">
