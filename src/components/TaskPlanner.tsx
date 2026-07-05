@@ -749,7 +749,7 @@ export default function TaskPlanner() {
                   key={t.id}
                   task={t}
                   userId={userId!}
-                  onToggle={(id) => doneEntry.mutate(id)}
+                  onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
                   animating={justDroppedId !== t.id}
                 />
               ))}
@@ -781,7 +781,7 @@ export default function TaskPlanner() {
                         key={t.id}
                         task={t}
                         userId={userId!}
-                        onToggle={(id) => doneEntry.mutate(id)}
+                        onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
                         animating
                       />
                     ))}
