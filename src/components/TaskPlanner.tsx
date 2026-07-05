@@ -514,28 +514,106 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
   );
 }
 
+/* -------------- Priority picker --------------- */
+function PriorityPicker({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: Priority;
+  disabled?: boolean;
+  onChange: (p: Priority) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const meta = PRIORITY_META[value];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled) setOpen((v) => !v);
+        }}
+        className={cn(
+          "flex items-center gap-1 rounded-md border-2 border-ink px-1.5 py-0.5 text-[10px] font-bold shadow-brick-sm transition-all",
+          "hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
+          meta.chip,
+          disabled && "opacity-60 cursor-not-allowed",
+        )}
+        aria-label={`设置优先级：当前${meta.label}`}
+        title={`优先级：${meta.label}`}
+      >
+        <span className={cn("h-2 w-2 rounded-full border border-ink/60", meta.dot)} />
+        {meta.short}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-30 mt-1 flex flex-col gap-1 rounded-lg border-2 border-ink bg-card p-1.5 shadow-brick">
+            {([1, 2, 3] as Priority[]).map((p) => {
+              const m = PRIORITY_META[p];
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    if (p !== value) onChange(p);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border-2 border-ink px-2 py-1 text-xs font-bold shadow-brick-sm hover:shadow-brick",
+                    m.chip,
+                    p === value && "ring-2 ring-ink",
+                  )}
+                >
+                  <span className={cn("h-2.5 w-2.5 rounded-full border border-ink/60", m.dot)} />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* -------------- Daily brick --------------- */
 function DailyBrick({
   task,
   userId,
   onToggle,
+  onSetPriority,
   animating,
 }: {
   task: DailyTask;
   userId: string;
   onToggle: (id: string) => void;
+  onSetPriority: (id: string, p: Priority) => void;
   animating: boolean;
 }) {
+  const pmeta = PRIORITY_META[task.priority];
   return (
     <div
       className={cn(
-        "group relative rounded-xl border-2 border-ink p-4 transition-all",
+        "group relative overflow-hidden rounded-xl border-2 border-ink p-4 pl-5 transition-all",
         task.done
           ? "bg-done/50 shadow-brick-sm opacity-70"
           : "bg-card shadow-brick hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick-lg",
         !animating && !task.done && "animate-brick-drop",
       )}
     >
+      {/* priority stripe */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute left-0 top-0 h-full w-1.5 border-r-2 border-ink",
+          pmeta.dot,
+          task.done && "opacity-50",
+        )}
+      />
       <div className="flex items-start gap-3">
         <button
           onClick={() => {
@@ -573,9 +651,16 @@ function DailyBrick({
             )}
           </p>
         </div>
-        {task.taskId && !task.done && (
-          <TaskAttachments taskId={task.taskId} userId={userId} />
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <PriorityPicker
+            value={task.priority}
+            disabled={task.done}
+            onChange={(p) => onSetPriority(task.id, p)}
+          />
+          {task.taskId && !task.done && (
+            <TaskAttachments taskId={task.taskId} userId={userId} />
+          )}
+        </div>
       </div>
     </div>
   );
