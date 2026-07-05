@@ -134,6 +134,15 @@ export async function markDailyEntryDone(id: string) {
   if (error) throw error;
 }
 
+export async function unmarkDailyEntryDone(id: string) {
+  const { error } = await supabase
+    .from("daily_entries")
+    .update({ done_at: null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+
 export async function removeDailyEntry(id: string) {
   const { error } = await supabase.from("daily_entries").delete().eq("id", id);
   if (error) throw error;
