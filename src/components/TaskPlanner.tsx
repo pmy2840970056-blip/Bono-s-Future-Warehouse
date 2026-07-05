@@ -52,6 +52,7 @@ import {
   fetchGoalsTree,
   fetchTodayEntries,
   markDailyEntryDone,
+  unmarkDailyEntryDone,
   removeDailyEntry,
   seedSampleData,
 } from "@/lib/planner-api";
@@ -410,6 +411,7 @@ function DailyBrick({
         <button
           onClick={() => {
             if (!task.done) sfxComplete();
+            else sfxClick();
             onToggle(task.id);
           }}
           className={cn(
@@ -417,7 +419,8 @@ function DailyBrick({
             "shadow-brick-sm hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
             task.done ? colorClass[task.color] : "bg-background",
           )}
-          aria-label="完成"
+          aria-label={task.done ? "取消完成" : "完成"}
+          title={task.done ? "点一下取消完成，放回今日待办" : "完成"}
         >
           {task.done && (
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="4">
@@ -558,13 +561,14 @@ export default function TaskPlanner() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "拖入失败"),
   });
 
-  const doneEntry = useMutation({
-    mutationFn: (id: string) => markDailyEntryDone(id),
-    onMutate: async (id) => {
+  const toggleEntry = useMutation({
+    mutationFn: ({ id, done }: { id: string; done: boolean }) =>
+      done ? unmarkDailyEntryDone(id) : markDailyEntryDone(id),
+    onMutate: async ({ id, done }) => {
       await qc.cancelQueries({ queryKey: ["daily", userId] });
       const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
-        (old ?? []).map((t) => (t.id === id ? { ...t, done: true } : t)),
+        (old ?? []).map((t) => (t.id === id ? { ...t, done: !done } : t)),
       );
       return { prev };
     },
@@ -573,6 +577,7 @@ export default function TaskPlanner() {
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
   });
+
 
   const clearDone = useMutation({
     mutationFn: async () => {
@@ -744,7 +749,7 @@ export default function TaskPlanner() {
                   key={t.id}
                   task={t}
                   userId={userId!}
-                  onToggle={(id) => doneEntry.mutate(id)}
+                  onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
                   animating={justDroppedId !== t.id}
                 />
               ))}
@@ -776,7 +781,7 @@ export default function TaskPlanner() {
                         key={t.id}
                         task={t}
                         userId={userId!}
-                        onToggle={(id) => doneEntry.mutate(id)}
+                        onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
                         animating
                       />
                     ))}
