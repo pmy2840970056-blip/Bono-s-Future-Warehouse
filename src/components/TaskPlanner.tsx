@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import { AiGoalDialog } from "@/components/AiGoalDialog";
 import { TaskAttachments } from "@/components/TaskAttachments";
+import { fetchAttachmentCounts } from "@/lib/attachments-api";
 import { useNavigate } from "@tanstack/react-router";
 import {
   isMuted,
@@ -118,7 +119,6 @@ function InlineAdd({
 }) {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
-  const [busy, setBusy] = useState(false);
 
   if (!open) {
     return (
@@ -136,17 +136,16 @@ function InlineAdd({
   }
   return (
     <form
-      onSubmit={async (e) => {
+      onSubmit={(e) => {
         e.preventDefault();
-        if (!val.trim() || busy) return;
-        setBusy(true);
-        try {
-          await onAdd(val.trim());
-          setVal("");
-          setOpen(false);
-        } finally {
-          setBusy(false);
-        }
+        const next = val.trim();
+        if (!next) return;
+        setVal("");
+        setOpen(false);
+        Promise.resolve(onAdd(next)).catch(() => {
+          setVal(next);
+          setOpen(true);
+        });
       }}
       className="flex items-center gap-1"
     >
@@ -162,7 +161,6 @@ function InlineAdd({
       />
       <button
         type="submit"
-        disabled={busy}
         className="grid h-8 w-8 shrink-0 place-items-center rounded-md border-2 border-ink bg-brick-2 shadow-brick-sm hover:shadow-brick"
       >
         <Plus className="h-4 w-4" strokeWidth={3} />
@@ -452,8 +450,8 @@ function DailyBrick({
   );
 }
 
-function DropZone({ isOver, hasTasks }: { isOver: boolean; hasTasks: boolean }) {
-  const { setNodeRef } = useDroppable({ id: "daily-drop" });
+function DropZone({ hasTasks }: { hasTasks: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "daily-drop" });
   return (
     <div
       ref={setNodeRef}
@@ -481,19 +479,26 @@ function DropZone({ isOver, hasTasks }: { isOver: boolean; hasTasks: boolean }) 
 }
 
 /* ---------------- Main page --------------- */
-export default function TaskPlanner() {
+export default function TaskPlanner({
+  initialUserId,
+  initialUserEmail,
+}: {
+  initialUserId?: string;
+  initialUserEmail?: string;
+}) {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(initialUserId ?? null);
+  const [userEmail, setUserEmail] = useState<string>(initialUserEmail ?? "");
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
-  const [isOver, setIsOver] = useState(false);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [loadAttachmentCounts, setLoadAttachmentCounts] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
+    if (initialUserId) return;
     // Use cached session (no network) — the _authenticated gate already validated the user.
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user) {
@@ -501,7 +506,7 @@ export default function TaskPlanner() {
         setUserEmail(data.session.user.email ?? "");
       }
     });
-  }, []);
+  }, [initialUserId]);
 
   const goalsQ = useQuery({
     queryKey: ["goals", userId],
@@ -517,25 +522,33 @@ export default function TaskPlanner() {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
+  const goals = goalsQ.data ?? [];
+  const daily = dailyQ.data ?? [];
+  const allTaskIds = useMemo(
+    () => goals.flatMap((goal) => goal.subgoals.flatMap((sub) => sub.tasks.map((task) => task.id))),
+    [goals],
+  );
+
+  useEffect(() => {
+    if (!userId || allTaskIds.length === 0) return;
+    setLoadAttachmentCounts(false);
+    const run = () => setLoadAttachmentCounts(true);
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(run, { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(run, 600);
+    return () => window.clearTimeout(id);
+  }, [userId, allTaskIds]);
+
   useQuery({
     queryKey: ["attachment-counts", userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("task_attachments")
-        .select("task_id")
-        .eq("user_id", userId!);
-      if (error) throw error;
-      const out: Record<string, number> = {};
-      for (const r of data ?? []) out[r.task_id] = (out[r.task_id] ?? 0) + 1;
-      return out;
-    },
-    enabled: !!userId,
+    queryFn: () => fetchAttachmentCounts(allTaskIds),
+    enabled: !!userId && allTaskIds.length > 0 && loadAttachmentCounts,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  const goals = goalsQ.data ?? [];
-  const daily = dailyQ.data ?? [];
   const usedIds = useMemo(
     () => new Set(daily.map((d) => d.taskId).filter(Boolean) as string[]),
     [daily],
@@ -671,7 +684,6 @@ export default function TaskPlanner() {
   function handleDragEnd(e: DragEndEvent) {
     const payload = e.active.data.current as DragPayload | undefined;
     setDragPayload(null);
-    setIsOver(false);
     if (!payload) return;
     if (e.over?.id !== "daily-drop") return;
     if (usedIds.has(payload.taskId)) return;
@@ -696,10 +708,8 @@ export default function TaskPlanner() {
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onDragOver={(e) => setIsOver(e.over?.id === "daily-drop")}
       onDragCancel={() => {
         setDragPayload(null);
-        setIsOver(false);
       }}
     >
       <div className="min-h-screen">
@@ -820,7 +830,7 @@ export default function TaskPlanner() {
                   animating={justDroppedId !== t.id}
                 />
               ))}
-              <DropZone isOver={isOver} hasTasks={daily.length > 0} />
+              <DropZone hasTasks={daily.length > 0} />
 
               {doneCount > 0 && (
                 <div className="pt-4">
