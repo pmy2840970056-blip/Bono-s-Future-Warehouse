@@ -494,10 +494,11 @@ export default function TaskPlanner() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email ?? "");
+    // Use cached session (no network) — the _authenticated gate already validated the user.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        setUserId(data.session.user.id);
+        setUserEmail(data.session.user.email ?? "");
       }
     });
   }, []);
@@ -506,11 +507,15 @@ export default function TaskPlanner() {
     queryKey: ["goals", userId],
     queryFn: () => fetchGoalsTree(userId!),
     enabled: !!userId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
   const dailyQ = useQuery({
     queryKey: ["daily", userId],
     queryFn: () => fetchTodayEntries(userId!),
     enabled: !!userId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
   useQuery({
     queryKey: ["attachment-counts", userId],
@@ -525,6 +530,8 @@ export default function TaskPlanner() {
       return out;
     },
     enabled: !!userId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const goals = goalsQ.data ?? [];
@@ -541,24 +548,71 @@ export default function TaskPlanner() {
   const addGoal = useMutation({
     mutationFn: (title: string) =>
       createGoal(userId!, title, CYCLE[goals.length % CYCLE.length], goals.length),
-    onSuccess: () => {
+    onMutate: async (title) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: Goal = {
+        id: tempId,
+        title,
+        color: CYCLE[goals.length % CYCLE.length],
+        subgoals: [],
+      };
+      qc.setQueryData<Goal[]>(["goals", userId], (old) => [...(old ?? []), optimistic]);
       sfxPop();
-      qc.invalidateQueries({ queryKey: ["goals", userId] });
+      return { prev };
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "创建失败"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onError: (e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
+      toast.error(e instanceof Error ? e.message : "创建失败");
+    },
   });
 
   const dropEntry = useMutation({
     mutationFn: (p: DragPayload) => createDailyEntry(userId!, p),
-    onSuccess: (row) => {
+    onMutate: async (p) => {
+      await qc.cancelQueries({ queryKey: ["daily", userId] });
+      const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: DailyTask = {
+        id: tempId,
+        taskId: p.taskId,
+        title: p.title,
+        goalTitle: p.goalTitle,
+        subGoalTitle: p.subGoalTitle,
+        color: p.color,
+        done: false,
+      };
+      qc.setQueryData<DailyTask[]>(["daily", userId], (old) => [...(old ?? []), optimistic]);
       sfxDrop();
-      qc.invalidateQueries({ queryKey: ["daily", userId] });
-      if (row) {
-        setJustDroppedId(row.id);
-        setTimeout(() => setJustDroppedId(null), 400);
+      setJustDroppedId(tempId);
+      setTimeout(() => setJustDroppedId(null), 400);
+      return { prev, tempId };
+    },
+    onSuccess: (row, _v, ctx) => {
+      if (row && ctx) {
+        qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
+          (old ?? []).map((t) =>
+            t.id === ctx.tempId
+              ? {
+                  id: row.id,
+                  taskId: row.task_id ?? "",
+                  title: row.title_snapshot,
+                  goalTitle: row.goal_title_snapshot,
+                  subGoalTitle: row.subgoal_title_snapshot,
+                  color: row.color_snapshot as BrickColor,
+                  done: !!row.done_at,
+                }
+              : t,
+          ),
+        );
       }
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "拖入失败"),
+    onError: (e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+      toast.error(e instanceof Error ? e.message : "拖入失败");
+    },
   });
 
   const toggleEntry = useMutation({
@@ -575,16 +629,29 @@ export default function TaskPlanner() {
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
+    // No onSettled refetch — optimistic value already matches server state.
   });
+
 
 
   const clearDone = useMutation({
-    mutationFn: async () => {
-      await Promise.all(doneDaily.map((d) => removeDailyEntry(d.id)));
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => removeDailyEntry(id)));
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: ["daily", userId] });
+      const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      const set = new Set(ids);
+      qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
+        (old ?? []).filter((t) => !set.has(t.id)),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+    },
   });
+
 
 
   const seed = useMutation({
@@ -768,7 +835,9 @@ export default function TaskPlanner() {
                     </div>
                     <button
                       onClick={() => {
-                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) clearDone.mutate();
+                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) {
+                          clearDone.mutate(doneDaily.map((d) => d.id));
+                        }
                       }}
                       className="text-[11px] font-bold text-muted-foreground hover:text-ink"
                     >
