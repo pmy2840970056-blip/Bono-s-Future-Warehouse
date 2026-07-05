@@ -553,8 +553,8 @@ function PriorityPicker({
         side="bottom"
         sideOffset={6}
         className="w-auto min-w-[160px] rounded-lg border-2 border-ink bg-card p-1.5 shadow-brick"
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-1.5">
           {([1, 2, 3] as Priority[]).map((p) => {
