@@ -530,6 +530,8 @@ export default function TaskPlanner() {
       return out;
     },
     enabled: !!userId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const goals = goalsQ.data ?? [];
