@@ -257,21 +257,90 @@ function SubGoalBlock({
 
   const addTask = useMutation({
     mutationFn: (title: string) => createTask(userId, sub.id, title, sub.tasks.length),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "添加失败"),
+    onMutate: async (title) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      const tempId = `temp-${Date.now()}`;
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id !== goal.id
+            ? g
+            : {
+                ...g,
+                subgoals: g.subgoals.map((s) =>
+                  s.id !== sub.id ? s : { ...s, tasks: [...s.tasks, { id: tempId, title }] },
+                ),
+              },
+        ),
+      );
+      sfxPop();
+      return { prev, tempId };
+    },
+    onSuccess: (row, _title, ctx) => {
+      if (!ctx) return;
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id !== goal.id
+            ? g
+            : {
+                ...g,
+                subgoals: g.subgoals.map((s) =>
+                  s.id !== sub.id
+                    ? s
+                    : { ...s, tasks: s.tasks.map((t) => (t.id === ctx.tempId ? { id: row.id, title: row.title } : t)) },
+                ),
+              },
+        ),
+      );
+    },
+    onError: (e, _title, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
+      toast.error(e instanceof Error ? e.message : "添加失败");
+    },
   });
   const delTask = useMutation({
     mutationFn: (id: string) => deleteTask(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id !== goal.id
+            ? g
+            : {
+                ...g,
+                subgoals: g.subgoals.map((s) =>
+                  s.id !== sub.id ? s : { ...s, tasks: s.tasks.filter((t) => t.id !== id) },
+                ),
+              },
+        ),
+      );
+      return { prev };
+    },
     onSuccess: () => {
       sfxDelete();
-      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
     },
   });
   const delSub = useMutation({
     mutationFn: () => deleteSubgoal(sub.id),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id !== goal.id ? g : { ...g, subgoals: g.subgoals.filter((s) => s.id !== sub.id) },
+        ),
+      );
+      return { prev };
+    },
     onSuccess: () => {
       sfxDelete();
-      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
     },
   });
 
@@ -327,13 +396,50 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
 
   const addSub = useMutation({
     mutationFn: (title: string) => createSubgoal(userId, goal.id, title, goal.subgoals.length),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onMutate: async (title) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      const tempId = `temp-${Date.now()}`;
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id !== goal.id
+            ? g
+            : { ...g, subgoals: [...g.subgoals, { id: tempId, title, tasks: [] }] },
+        ),
+      );
+      sfxPop();
+      return { prev, tempId };
+    },
+    onSuccess: (row, _title, ctx) => {
+      if (!ctx) return;
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id !== goal.id
+            ? g
+            : {
+                ...g,
+                subgoals: g.subgoals.map((s) => (s.id === ctx.tempId ? { ...s, id: row.id, title: row.title } : s)),
+              },
+        ),
+      );
+    },
+    onError: (_e, _title, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
+    },
   });
   const delGoal = useMutation({
     mutationFn: () => deleteGoal(goal.id),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      qc.setQueryData<Goal[]>(["goals", userId], (old) => (old ?? []).filter((g) => g.id !== goal.id));
+      return { prev };
+    },
     onSuccess: () => {
       sfxDelete();
-      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
     },
   });
 
@@ -573,9 +679,16 @@ export default function TaskPlanner({
       };
       qc.setQueryData<Goal[]>(["goals", userId], (old) => [...(old ?? []), optimistic]);
       sfxPop();
-      return { prev };
+      return { prev, tempId };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: (row, _title, ctx) => {
+      if (!ctx) return;
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) =>
+          g.id === ctx.tempId ? { ...g, id: row.id, title: row.title, color: row.color as BrickColor } : g,
+        ),
+      );
+    },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
       toast.error(e instanceof Error ? e.message : "创建失败");
