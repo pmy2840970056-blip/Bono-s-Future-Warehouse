@@ -20,12 +20,25 @@ import {
   Sparkles,
   Target,
   Trash2,
+  Volume2,
+  VolumeX,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AiGoalDialog } from "@/components/AiGoalDialog";
 import { TaskAttachments } from "@/components/TaskAttachments";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  isMuted,
+  sfxCheer,
+  sfxClick,
+  sfxComplete,
+  sfxDelete,
+  sfxDrop,
+  sfxPop,
+  toggleMuted,
+} from "@/lib/sfx";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -60,6 +73,29 @@ const colorRing: Record<BrickColor, string> = {
   "brick-4": "before:bg-brick-4",
 };
 const CYCLE: BrickColor[] = ["brick-1", "brick-2", "brick-3", "brick-4"];
+
+function MuteButton() {
+  const [muted, setMutedState] = useState(false);
+  useEffect(() => {
+    setMutedState(isMuted());
+    const h = () => setMutedState(isMuted());
+    window.addEventListener("sfx:mute-change", h);
+    return () => window.removeEventListener("sfx:mute-change", h);
+  }, []);
+  return (
+    <button
+      onClick={() => {
+        const next = toggleMuted();
+        if (!next) sfxClick();
+      }}
+      className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+      aria-label={muted ? "开启音效" : "关闭音效"}
+      title={muted ? "开启音效" : "关闭音效"}
+    >
+      {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+    </button>
+  );
+}
 
 type DragPayload = {
   taskId: string;
@@ -227,11 +263,17 @@ function SubGoalBlock({
   });
   const delTask = useMutation({
     mutationFn: (id: string) => deleteTask(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxDelete();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
   });
   const delSub = useMutation({
     mutationFn: () => deleteSubgoal(sub.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxDelete();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
   });
 
   return (
@@ -290,7 +332,10 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
   });
   const delGoal = useMutation({
     mutationFn: () => deleteGoal(goal.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxDelete();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
   });
 
   return (
@@ -362,7 +407,10 @@ function DailyBrick({
     >
       <div className="flex items-start gap-3">
         <button
-          onClick={() => onToggle(task.id)}
+          onClick={() => {
+            if (!task.done) sfxComplete();
+            onToggle(task.id);
+          }}
           className={cn(
             "mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 border-ink transition-all",
             "shadow-brick-sm hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
@@ -376,6 +424,7 @@ function DailyBrick({
             </svg>
           )}
         </button>
+
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex items-center gap-1.5 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
             <span className={cn("rounded border border-ink px-1.5 py-0.5", colorClass[task.color])}>
@@ -486,13 +535,17 @@ export default function TaskPlanner() {
   const addGoal = useMutation({
     mutationFn: (title: string) =>
       createGoal(userId!, title, CYCLE[goals.length % CYCLE.length], goals.length),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxPop();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "创建失败"),
   });
 
   const dropEntry = useMutation({
     mutationFn: (p: DragPayload) => createDailyEntry(userId!, p),
     onSuccess: (row) => {
+      sfxDrop();
       qc.invalidateQueries({ queryKey: ["daily", userId] });
       if (row) {
         setJustDroppedId(row.id);
@@ -525,11 +578,13 @@ export default function TaskPlanner() {
   const seed = useMutation({
     mutationFn: () => seedSampleData(userId!),
     onSuccess: () => {
+      sfxCheer();
       qc.invalidateQueries({ queryKey: ["goals", userId] });
       toast.success("已载入示例目标");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "载入失败"),
   });
+
 
   function handleDragStart(e: DragStartEvent) {
     setDragPayload(e.active.data.current as DragPayload);
@@ -592,7 +647,9 @@ export default function TaskPlanner() {
                 <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                 <span className="hidden sm:inline">AI 拆解</span>
               </button>
+              <MuteButton />
               <div className="hidden md:block text-xs text-muted-foreground">{userEmail}</div>
+
               <button
                 onClick={handleSignOut}
                 className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"

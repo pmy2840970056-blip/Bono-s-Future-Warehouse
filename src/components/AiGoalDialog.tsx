@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { decomposeGoal, type DecomposedTree } from "@/lib/ai.functions";
 import { createGoal, createSubgoal, createTask } from "@/lib/planner-api";
 import type { BrickColor } from "@/lib/planner-types";
+import { sfxCheer, sfxPop } from "@/lib/sfx";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +52,10 @@ export function AiGoalDialog({
 
   const decomposeM = useMutation({
     mutationFn: (goal: string) => decomposeFn({ data: { goal } }),
-    onSuccess: (data) => setTree(data),
+    onSuccess: (data) => {
+      sfxPop();
+      setTree(data);
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "AI 拆解失败"),
   });
 
@@ -70,6 +74,7 @@ export function AiGoalDialog({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals", userId] });
+      sfxCheer();
       toast.success("已导入目标树");
       reset();
       onOpenChange(false);
