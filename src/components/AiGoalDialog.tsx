@@ -52,7 +52,10 @@ export function AiGoalDialog({
 
   const decomposeM = useMutation({
     mutationFn: (goal: string) => decomposeFn({ data: { goal } }),
-    onSuccess: (data) => setTree(data),
+    onSuccess: (data) => {
+      sfxPop();
+      setTree(data);
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "AI 拆解失败"),
   });
 
