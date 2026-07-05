@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { BrickColor, DailyTask, Goal } from "./planner-types";
+import type { BrickColor, DailyTask, Goal, Priority } from "./planner-types";
 
 export async function fetchGoalsTree(userId: string): Promise<Goal[]> {
   const { data, error } = await supabase
