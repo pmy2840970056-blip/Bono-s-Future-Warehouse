@@ -561,13 +561,14 @@ export default function TaskPlanner() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "拖入失败"),
   });
 
-  const doneEntry = useMutation({
-    mutationFn: (id: string) => markDailyEntryDone(id),
-    onMutate: async (id) => {
+  const toggleEntry = useMutation({
+    mutationFn: ({ id, done }: { id: string; done: boolean }) =>
+      done ? unmarkDailyEntryDone(id) : markDailyEntryDone(id),
+    onMutate: async ({ id, done }) => {
       await qc.cancelQueries({ queryKey: ["daily", userId] });
       const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
-        (old ?? []).map((t) => (t.id === id ? { ...t, done: true } : t)),
+        (old ?? []).map((t) => (t.id === id ? { ...t, done: !done } : t)),
       );
       return { prev };
     },
@@ -576,6 +577,7 @@ export default function TaskPlanner() {
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
   });
+
 
   const clearDone = useMutation({
     mutationFn: async () => {
