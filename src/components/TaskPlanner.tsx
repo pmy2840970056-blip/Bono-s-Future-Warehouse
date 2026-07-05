@@ -755,6 +755,7 @@ export default function TaskPlanner({
                   subGoalTitle: row.subgoal_title_snapshot,
                   color: row.color_snapshot as BrickColor,
                   done: !!row.done_at,
+                  priority: ((row as { priority?: number }).priority ?? 2) as Priority,
                 }
               : t,
           ),
