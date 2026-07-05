@@ -52,6 +52,7 @@ import {
   fetchGoalsTree,
   fetchTodayEntries,
   markDailyEntryDone,
+  unmarkDailyEntryDone,
   removeDailyEntry,
   seedSampleData,
 } from "@/lib/planner-api";
