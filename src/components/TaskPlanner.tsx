@@ -528,7 +528,7 @@ function PriorityPicker({
   const [open, setOpen] = useState(false);
   const meta = PRIORITY_META[value];
   return (
-    <Popover open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
+    <Popover open={open} onOpenChange={(o: boolean) => !disabled && setOpen(o)}>
       <PopoverTrigger asChild>
         <button
           type="button"
