@@ -510,6 +510,7 @@ export default function TaskPlanner() {
   const dropEntry = useMutation({
     mutationFn: (p: DragPayload) => createDailyEntry(userId!, p),
     onSuccess: (row) => {
+      sfxDrop();
       qc.invalidateQueries({ queryKey: ["daily", userId] });
       if (row) {
         setJustDroppedId(row.id);
@@ -542,11 +543,13 @@ export default function TaskPlanner() {
   const seed = useMutation({
     mutationFn: () => seedSampleData(userId!),
     onSuccess: () => {
+      sfxCheer();
       qc.invalidateQueries({ queryKey: ["goals", userId] });
       toast.success("已载入示例目标");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "载入失败"),
   });
+
 
   function handleDragStart(e: DragStartEvent) {
     setDragPayload(e.active.data.current as DragPayload);
