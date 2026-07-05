@@ -792,6 +792,23 @@ export default function TaskPlanner({
     // No onSettled refetch — optimistic value already matches server state.
   });
 
+  const setPriority = useMutation({
+    mutationFn: ({ id, priority }: { id: string; priority: Priority }) =>
+      updateDailyEntryPriority(id, priority),
+    onMutate: async ({ id, priority }) => {
+      await qc.cancelQueries({ queryKey: ["daily", userId] });
+      const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
+        (old ?? []).map((t) => (t.id === id ? { ...t, priority } : t)),
+      );
+      sfxClick();
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+    },
+  });
+
 
 
   const clearDone = useMutation({
