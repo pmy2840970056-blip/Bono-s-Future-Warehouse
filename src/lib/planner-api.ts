@@ -37,7 +37,7 @@ export async function fetchTodayEntries(userId: string): Promise<DailyTask[]> {
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("daily_entries")
-    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at")
+    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at, priority")
     .eq("user_id", userId)
     .eq("entry_date", today)
     .order("created_at", { ascending: true });
@@ -52,6 +52,7 @@ export async function fetchTodayEntries(userId: string): Promise<DailyTask[]> {
     subGoalTitle: d.subgoal_title_snapshot,
     color: d.color_snapshot as BrickColor,
     done: !!d.done_at,
+    priority: ((d as { priority?: number }).priority ?? 2) as Priority,
   }));
 }
 
