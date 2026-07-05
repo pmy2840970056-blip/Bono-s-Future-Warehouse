@@ -537,8 +537,8 @@ export default function TaskPlanner({
       const id = window.requestIdleCallback(run, { timeout: 1500 });
       return () => window.cancelIdleCallback(id);
     }
-    const id = window.setTimeout(run, 600);
-    return () => window.clearTimeout(id);
+    const id = globalThis.setTimeout(run, 600);
+    return () => globalThis.clearTimeout(id);
   }, [userId, allTaskIds]);
 
   useQuery({
