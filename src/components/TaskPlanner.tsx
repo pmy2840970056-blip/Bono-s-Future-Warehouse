@@ -566,17 +566,21 @@ export default function TaskPlanner() {
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
         (old ?? []).map((t) => (t.id === id ? { ...t, done: true } : t)),
       );
-      // Remove after fade animation
-      setTimeout(async () => {
-        await removeDailyEntry(id);
-        qc.invalidateQueries({ queryKey: ["daily", userId] });
-      }, 900);
       return { prev };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
     },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
   });
+
+  const clearDone = useMutation({
+    mutationFn: async () => {
+      await Promise.all(doneDaily.map((d) => removeDailyEntry(d.id)));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
+  });
+
 
   const seed = useMutation({
     mutationFn: () => seedSampleData(userId!),
