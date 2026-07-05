@@ -459,6 +459,20 @@ export default function TaskPlanner() {
     queryFn: () => fetchTodayEntries(userId!),
     enabled: !!userId,
   });
+  useQuery({
+    queryKey: ["attachment-counts", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_attachments")
+        .select("task_id")
+        .eq("user_id", userId!);
+      if (error) throw error;
+      const out: Record<string, number> = {};
+      for (const r of data ?? []) out[r.task_id] = (out[r.task_id] ?? 0) + 1;
+      return out;
+    },
+    enabled: !!userId,
+  });
 
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
