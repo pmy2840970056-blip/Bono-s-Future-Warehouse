@@ -734,6 +734,7 @@ export default function TaskPlanner({
         subGoalTitle: p.subGoalTitle,
         color: p.color,
         done: false,
+        priority: 2,
       };
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) => [...(old ?? []), optimistic]);
       sfxDrop();
