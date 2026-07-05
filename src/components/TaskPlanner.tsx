@@ -494,10 +494,11 @@ export default function TaskPlanner() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email ?? "");
+    // Use cached session (no network) — the _authenticated gate already validated the user.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        setUserId(data.session.user.id);
+        setUserEmail(data.session.user.email ?? "");
       }
     });
   }, []);
@@ -506,11 +507,15 @@ export default function TaskPlanner() {
     queryKey: ["goals", userId],
     queryFn: () => fetchGoalsTree(userId!),
     enabled: !!userId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
   const dailyQ = useQuery({
     queryKey: ["daily", userId],
     queryFn: () => fetchTodayEntries(userId!),
     enabled: !!userId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
   useQuery({
     queryKey: ["attachment-counts", userId],
