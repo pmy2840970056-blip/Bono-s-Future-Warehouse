@@ -20,12 +20,25 @@ import {
   Sparkles,
   Target,
   Trash2,
+  Volume2,
+  VolumeX,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AiGoalDialog } from "@/components/AiGoalDialog";
 import { TaskAttachments } from "@/components/TaskAttachments";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  isMuted,
+  sfxCheer,
+  sfxClick,
+  sfxComplete,
+  sfxDelete,
+  sfxDrop,
+  sfxPop,
+  toggleMuted,
+} from "@/lib/sfx";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import {
