@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AiGoalDialog } from "@/components/AiGoalDialog";
+import { TaskAttachments } from "@/components/TaskAttachments";
 import { useNavigate } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -139,12 +140,14 @@ function LeafTaskBrick({
   goal,
   sub,
   usedIds,
+  userId,
   onDelete,
 }: {
   task: LeafTask;
   goal: Goal;
   sub: SubGoal;
   usedIds: Set<string>;
+  userId: string;
   onDelete: () => void;
 }) {
   const used = usedIds.has(task.id);
@@ -170,12 +173,19 @@ function LeafTaskBrick({
         "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:rounded-l-md",
         colorRing[goal.color],
         used
-          ? "opacity-40 cursor-not-allowed"
-          : "cursor-grab active:cursor-grabbing hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
+          ? "opacity-40"
+          : "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
         isDragging && "opacity-30",
       )}
     >
-      <div {...attributes} {...listeners} className="flex flex-1 items-center gap-2 min-w-0">
+      <div
+        {...attributes}
+        {...listeners}
+        className={cn(
+          "flex flex-1 items-center gap-2 min-w-0",
+          used ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
+        )}
+      >
         <GripVertical className="ml-1 h-4 w-4 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-100" />
         <span className="min-w-0 flex-1 text-sm font-medium leading-snug">{task.title}</span>
       </div>
@@ -184,6 +194,7 @@ function LeafTaskBrick({
           已安排
         </span>
       )}
+      <TaskAttachments taskId={task.id} userId={userId} compact />
       <button
         onClick={onDelete}
         className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition"
@@ -252,6 +263,7 @@ function SubGoalBlock({
               goal={goal}
               sub={sub}
               usedIds={usedIds}
+              userId={userId}
               onDelete={() => delTask.mutate(t.id)}
             />
           ))}
@@ -330,10 +342,12 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
 /* -------------- Daily brick --------------- */
 function DailyBrick({
   task,
+  userId,
   onToggle,
   animating,
 }: {
   task: DailyTask;
+  userId: string;
   onToggle: (id: string) => void;
   animating: boolean;
 }) {
@@ -377,6 +391,9 @@ function DailyBrick({
             )}
           </p>
         </div>
+        {task.taskId && !task.done && (
+          <TaskAttachments taskId={task.taskId} userId={userId} />
+        )}
       </div>
     </div>
   );
@@ -440,6 +457,20 @@ export default function TaskPlanner() {
   const dailyQ = useQuery({
     queryKey: ["daily", userId],
     queryFn: () => fetchTodayEntries(userId!),
+    enabled: !!userId,
+  });
+  useQuery({
+    queryKey: ["attachment-counts", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_attachments")
+        .select("task_id")
+        .eq("user_id", userId!);
+      if (error) throw error;
+      const out: Record<string, number> = {};
+      for (const r of data ?? []) out[r.task_id] = (out[r.task_id] ?? 0) + 1;
+      return out;
+    },
     enabled: !!userId,
   });
 
@@ -648,6 +679,7 @@ export default function TaskPlanner() {
                 <DailyBrick
                   key={t.id}
                   task={t}
+                  userId={userId!}
                   onToggle={(id) => doneEntry.mutate(id)}
                   animating={justDroppedId !== t.id}
                 />
