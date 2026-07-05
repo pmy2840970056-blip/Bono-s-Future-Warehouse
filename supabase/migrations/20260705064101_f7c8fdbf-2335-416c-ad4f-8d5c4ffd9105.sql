@@ -1,0 +1,2 @@
+ALTER TABLE public.daily_entries ADD COLUMN IF NOT EXISTS priority smallint NOT NULL DEFAULT 2;
+CREATE INDEX IF NOT EXISTS daily_entries_user_date_priority_idx ON public.daily_entries(user_id, entry_date, priority);

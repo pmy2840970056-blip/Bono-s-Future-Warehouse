@@ -18,6 +18,8 @@ export type Goal = {
   subgoals: SubGoal[];
 };
 
+export type Priority = 1 | 2 | 3; // 1 高 · 2 中 · 3 低
+
 export type DailyTask = {
   id: string;             // unique id in daily list
   taskId: string;         // leaf task id
@@ -26,4 +28,5 @@ export type DailyTask = {
   subGoalTitle: string;
   color: BrickColor;
   done: boolean;
+  priority: Priority;
 };

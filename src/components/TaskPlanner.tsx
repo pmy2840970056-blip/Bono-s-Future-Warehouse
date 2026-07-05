@@ -56,8 +56,9 @@ import {
   unmarkDailyEntryDone,
   removeDailyEntry,
   seedSampleData,
+  updateDailyEntryPriority,
 } from "@/lib/planner-api";
-import type { BrickColor, DailyTask, Goal, LeafTask, SubGoal } from "@/lib/planner-types";
+import type { BrickColor, DailyTask, Goal, LeafTask, Priority, SubGoal } from "@/lib/planner-types";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,30 @@ const colorClass: Record<BrickColor, string> = {
   "brick-2": "bg-brick-2",
   "brick-3": "bg-brick-3",
   "brick-4": "bg-brick-4",
+};
+
+const PRIORITY_META: Record<Priority, { label: string; short: string; dot: string; ring: string; chip: string }> = {
+  1: {
+    label: "高优先级",
+    short: "高",
+    dot: "bg-red-500",
+    ring: "ring-red-500/60",
+    chip: "bg-red-100 text-red-700 border-red-500",
+  },
+  2: {
+    label: "中优先级",
+    short: "中",
+    dot: "bg-amber-400",
+    ring: "ring-amber-400/60",
+    chip: "bg-amber-100 text-amber-800 border-amber-500",
+  },
+  3: {
+    label: "低优先级",
+    short: "低",
+    dot: "bg-emerald-500",
+    ring: "ring-emerald-500/60",
+    chip: "bg-emerald-100 text-emerald-700 border-emerald-500",
+  },
 };
 const colorRing: Record<BrickColor, string> = {
   "brick-1": "before:bg-brick-1",
@@ -489,28 +514,106 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
   );
 }
 
+/* -------------- Priority picker --------------- */
+function PriorityPicker({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: Priority;
+  disabled?: boolean;
+  onChange: (p: Priority) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const meta = PRIORITY_META[value];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled) setOpen((v) => !v);
+        }}
+        className={cn(
+          "flex items-center gap-1 rounded-md border-2 border-ink px-1.5 py-0.5 text-[10px] font-bold shadow-brick-sm transition-all",
+          "hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
+          meta.chip,
+          disabled && "opacity-60 cursor-not-allowed",
+        )}
+        aria-label={`设置优先级：当前${meta.label}`}
+        title={`优先级：${meta.label}`}
+      >
+        <span className={cn("h-2 w-2 rounded-full border border-ink/60", meta.dot)} />
+        {meta.short}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-30 mt-1 flex flex-col gap-1 rounded-lg border-2 border-ink bg-card p-1.5 shadow-brick">
+            {([1, 2, 3] as Priority[]).map((p) => {
+              const m = PRIORITY_META[p];
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    if (p !== value) onChange(p);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md border-2 border-ink px-2 py-1 text-xs font-bold shadow-brick-sm hover:shadow-brick",
+                    m.chip,
+                    p === value && "ring-2 ring-ink",
+                  )}
+                >
+                  <span className={cn("h-2.5 w-2.5 rounded-full border border-ink/60", m.dot)} />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* -------------- Daily brick --------------- */
 function DailyBrick({
   task,
   userId,
   onToggle,
+  onSetPriority,
   animating,
 }: {
   task: DailyTask;
   userId: string;
   onToggle: (id: string) => void;
+  onSetPriority: (id: string, p: Priority) => void;
   animating: boolean;
 }) {
+  const pmeta = PRIORITY_META[task.priority];
   return (
     <div
       className={cn(
-        "group relative rounded-xl border-2 border-ink p-4 transition-all",
+        "group relative overflow-hidden rounded-xl border-2 border-ink p-4 pl-5 transition-all",
         task.done
           ? "bg-done/50 shadow-brick-sm opacity-70"
           : "bg-card shadow-brick hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick-lg",
         !animating && !task.done && "animate-brick-drop",
       )}
     >
+      {/* priority stripe */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute left-0 top-0 h-full w-1.5 border-r-2 border-ink",
+          pmeta.dot,
+          task.done && "opacity-50",
+        )}
+      />
       <div className="flex items-start gap-3">
         <button
           onClick={() => {
@@ -548,9 +651,16 @@ function DailyBrick({
             )}
           </p>
         </div>
-        {task.taskId && !task.done && (
-          <TaskAttachments taskId={task.taskId} userId={userId} />
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <PriorityPicker
+            value={task.priority}
+            disabled={task.done}
+            onChange={(p) => onSetPriority(task.id, p)}
+          />
+          {task.taskId && !task.done && (
+            <TaskAttachments taskId={task.taskId} userId={userId} />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -659,7 +769,14 @@ export default function TaskPlanner({
     () => new Set(daily.map((d) => d.taskId).filter(Boolean) as string[]),
     [daily],
   );
-  const activeDaily = useMemo(() => daily.filter((d) => !d.done), [daily]);
+  const activeDaily = useMemo(
+    () =>
+      daily
+        .filter((d) => !d.done)
+        .slice()
+        .sort((a, b) => a.priority - b.priority),
+    [daily],
+  );
   const doneDaily = useMemo(() => daily.filter((d) => d.done), [daily]);
   const activeCount = activeDaily.length;
   const doneCount = doneDaily.length;
@@ -709,6 +826,7 @@ export default function TaskPlanner({
         subGoalTitle: p.subGoalTitle,
         color: p.color,
         done: false,
+        priority: 2,
       };
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) => [...(old ?? []), optimistic]);
       sfxDrop();
@@ -729,6 +847,7 @@ export default function TaskPlanner({
                   subGoalTitle: row.subgoal_title_snapshot,
                   color: row.color_snapshot as BrickColor,
                   done: !!row.done_at,
+                  priority: ((row as { priority?: number }).priority ?? 2) as Priority,
                 }
               : t,
           ),
@@ -756,6 +875,23 @@ export default function TaskPlanner({
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
     },
     // No onSettled refetch — optimistic value already matches server state.
+  });
+
+  const setPriority = useMutation({
+    mutationFn: ({ id, priority }: { id: string; priority: Priority }) =>
+      updateDailyEntryPriority(id, priority),
+    onMutate: async ({ id, priority }) => {
+      await qc.cancelQueries({ queryKey: ["daily", userId] });
+      const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
+        (old ?? []).map((t) => (t.id === id ? { ...t, priority } : t)),
+      );
+      sfxClick();
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+    },
   });
 
 
@@ -940,6 +1076,7 @@ export default function TaskPlanner({
                   task={t}
                   userId={userId!}
                   onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
+                  onSetPriority={(id, priority) => setPriority.mutate({ id, priority })}
                   animating={justDroppedId !== t.id}
                 />
               ))}
@@ -974,6 +1111,7 @@ export default function TaskPlanner({
                         task={t}
                         userId={userId!}
                         onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
+                        onSetPriority={(id, priority) => setPriority.mutate({ id, priority })}
                         animating
                       />
                     ))}

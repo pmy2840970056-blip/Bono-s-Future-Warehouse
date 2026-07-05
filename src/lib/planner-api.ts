@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { BrickColor, DailyTask, Goal } from "./planner-types";
+import type { BrickColor, DailyTask, Goal, Priority } from "./planner-types";
 
 export async function fetchGoalsTree(userId: string): Promise<Goal[]> {
   const { data, error } = await supabase
@@ -37,7 +37,7 @@ export async function fetchTodayEntries(userId: string): Promise<DailyTask[]> {
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
     .from("daily_entries")
-    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at")
+    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at, priority")
     .eq("user_id", userId)
     .eq("entry_date", today)
     .order("created_at", { ascending: true });
@@ -52,6 +52,7 @@ export async function fetchTodayEntries(userId: string): Promise<DailyTask[]> {
     subGoalTitle: d.subgoal_title_snapshot,
     color: d.color_snapshot as BrickColor,
     done: !!d.done_at,
+    priority: ((d as { priority?: number }).priority ?? 2) as Priority,
   }));
 }
 
@@ -120,10 +121,18 @@ export async function createDailyEntry(
       subgoal_title_snapshot: payload.subGoalTitle,
       color_snapshot: payload.color,
     })
-    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at")
+    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at, priority")
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function updateDailyEntryPriority(id: string, priority: Priority) {
+  const { error } = await supabase
+    .from("daily_entries")
+    .update({ priority })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function markDailyEntryDone(id: string) {
