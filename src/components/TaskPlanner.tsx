@@ -821,7 +821,9 @@ export default function TaskPlanner() {
                     </div>
                     <button
                       onClick={() => {
-                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) clearDone.mutate();
+                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) {
+                          clearDone.mutate(doneDaily.map((d) => d.id));
+                        }
                       }}
                       className="text-[11px] font-bold text-muted-foreground hover:text-ink"
                     >
