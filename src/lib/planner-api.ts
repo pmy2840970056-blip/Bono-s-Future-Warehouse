@@ -121,10 +121,18 @@ export async function createDailyEntry(
       subgoal_title_snapshot: payload.subGoalTitle,
       color_snapshot: payload.color,
     })
-    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at")
+    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at, priority")
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function updateDailyEntryPriority(id: string, priority: Priority) {
+  const { error } = await supabase
+    .from("daily_entries")
+    .update({ priority })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function markDailyEntryDone(id: string) {
