@@ -527,11 +527,13 @@ export default function TaskPlanner() {
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
   const usedIds = useMemo(
-    () => new Set(daily.filter((d) => !d.done).map((d) => d.taskId).filter(Boolean)),
+    () => new Set(daily.map((d) => d.taskId).filter(Boolean) as string[]),
     [daily],
   );
-  const activeCount = daily.filter((d) => !d.done).length;
-  const doneCount = daily.filter((d) => d.done).length;
+  const activeDaily = useMemo(() => daily.filter((d) => !d.done), [daily]);
+  const doneDaily = useMemo(() => daily.filter((d) => d.done), [daily]);
+  const activeCount = activeDaily.length;
+  const doneCount = doneDaily.length;
 
   const addGoal = useMutation({
     mutationFn: (title: string) =>
