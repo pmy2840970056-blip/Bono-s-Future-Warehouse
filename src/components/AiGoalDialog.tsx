@@ -74,6 +74,7 @@ export function AiGoalDialog({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals", userId] });
+      sfxCheer();
       toast.success("已导入目标树");
       reset();
       onOpenChange(false);
