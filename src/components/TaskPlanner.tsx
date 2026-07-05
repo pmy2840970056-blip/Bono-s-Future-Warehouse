@@ -263,6 +263,7 @@ function SubGoalBlock({
               goal={goal}
               sub={sub}
               usedIds={usedIds}
+              userId={userId}
               onDelete={() => delTask.mutate(t.id)}
             />
           ))}
