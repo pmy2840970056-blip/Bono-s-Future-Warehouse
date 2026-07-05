@@ -1111,6 +1111,7 @@ export default function TaskPlanner({
                         task={t}
                         userId={userId!}
                         onToggle={(id) => toggleEntry.mutate({ id, done: t.done })}
+                        onSetPriority={(id, priority) => setPriority.mutate({ id, priority })}
                         animating
                       />
                     ))}
