@@ -74,6 +74,29 @@ const colorRing: Record<BrickColor, string> = {
 };
 const CYCLE: BrickColor[] = ["brick-1", "brick-2", "brick-3", "brick-4"];
 
+function MuteButton() {
+  const [muted, setMutedState] = useState(false);
+  useEffect(() => {
+    setMutedState(isMuted());
+    const h = () => setMutedState(isMuted());
+    window.addEventListener("sfx:mute-change", h);
+    return () => window.removeEventListener("sfx:mute-change", h);
+  }, []);
+  return (
+    <button
+      onClick={() => {
+        const next = toggleMuted();
+        if (!next) sfxClick();
+      }}
+      className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+      aria-label={muted ? "开启音效" : "关闭音效"}
+      title={muted ? "开启音效" : "关闭音效"}
+    >
+      {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+    </button>
+  );
+}
+
 type DragPayload = {
   taskId: string;
   title: string;
