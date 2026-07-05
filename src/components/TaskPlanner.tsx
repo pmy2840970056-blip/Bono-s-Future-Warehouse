@@ -62,6 +62,7 @@ import type { BrickColor, DailyTask, Goal, LeafTask, Priority, SubGoal } from "@
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const colorClass: Record<BrickColor, string> = {
   "brick-1": "bg-brick-1",
