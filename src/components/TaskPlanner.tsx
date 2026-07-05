@@ -527,56 +527,62 @@ function PriorityPicker({
   const [open, setOpen] = useState(false);
   const meta = PRIORITY_META[value];
   return (
-    <div className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!disabled) setOpen((v) => !v);
-        }}
-        className={cn(
-          "flex items-center gap-1 rounded-md border-2 border-ink px-1.5 py-0.5 text-[10px] font-bold shadow-brick-sm transition-all",
-          "hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
-          meta.chip,
-          disabled && "opacity-60 cursor-not-allowed",
-        )}
-        aria-label={`设置优先级：当前${meta.label}`}
-        title={`优先级：${meta.label}`}
+    <Popover open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={cn(
+            "flex items-center gap-1 rounded-md border-2 border-ink px-1.5 py-0.5 text-[10px] font-bold shadow-brick-sm transition-all",
+            "hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
+            meta.chip,
+            disabled && "opacity-60 cursor-not-allowed",
+          )}
+          aria-label={`设置优先级：当前${meta.label}`}
+          title={`优先级：${meta.label}`}
+        >
+          <span className={cn("h-2 w-2 rounded-full border border-ink/60", meta.dot)} />
+          {meta.short}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        side="bottom"
+        sideOffset={6}
+        className="w-auto min-w-[160px] rounded-lg border-2 border-ink bg-card p-1.5 shadow-brick"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        <span className={cn("h-2 w-2 rounded-full border border-ink/60", meta.dot)} />
-        {meta.short}
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-30 mt-1 flex flex-col gap-1 rounded-lg border-2 border-ink bg-card p-1.5 shadow-brick">
-            {([1, 2, 3] as Priority[]).map((p) => {
-              const m = PRIORITY_META[p];
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpen(false);
-                    if (p !== value) onChange(p);
-                  }}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md border-2 border-ink px-2 py-1 text-xs font-bold shadow-brick-sm hover:shadow-brick",
-                    m.chip,
-                    p === value && "ring-2 ring-ink",
-                  )}
-                >
-                  <span className={cn("h-2.5 w-2.5 rounded-full border border-ink/60", m.dot)} />
-                  {m.label}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
+        <div className="flex flex-col gap-1.5">
+          {([1, 2, 3] as Priority[]).map((p) => {
+            const m = PRIORITY_META[p];
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  if (p !== value) onChange(p);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2.5 rounded-md border-2 border-ink px-3 py-2 text-sm font-bold shadow-brick-sm transition-all",
+                  "hover:shadow-brick hover:-translate-y-0.5",
+                  m.chip,
+                  p === value && "ring-2 ring-ink ring-offset-1",
+                )}
+              >
+                <span className={cn("h-3 w-3 rounded-full border border-ink/60", m.dot)} />
+                {m.label}
+                {p === value && <span className="ml-auto text-xs opacity-70">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
