@@ -342,10 +342,12 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
 /* -------------- Daily brick --------------- */
 function DailyBrick({
   task,
+  userId,
   onToggle,
   animating,
 }: {
   task: DailyTask;
+  userId: string;
   onToggle: (id: string) => void;
   animating: boolean;
 }) {
@@ -389,6 +391,9 @@ function DailyBrick({
             )}
           </p>
         </div>
+        {task.taskId && !task.done && (
+          <TaskAttachments taskId={task.taskId} userId={userId} />
+        )}
       </div>
     </div>
   );
