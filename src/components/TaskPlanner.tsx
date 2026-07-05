@@ -548,11 +548,25 @@ export default function TaskPlanner() {
   const addGoal = useMutation({
     mutationFn: (title: string) =>
       createGoal(userId!, title, CYCLE[goals.length % CYCLE.length], goals.length),
-    onSuccess: () => {
+    onMutate: async (title) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: Goal = {
+        id: tempId,
+        title,
+        color: CYCLE[goals.length % CYCLE.length],
+        subgoals: [],
+      };
+      qc.setQueryData<Goal[]>(["goals", userId], (old) => [...(old ?? []), optimistic]);
       sfxPop();
-      qc.invalidateQueries({ queryKey: ["goals", userId] });
+      return { prev };
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "创建失败"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onError: (e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
+      toast.error(e instanceof Error ? e.message : "创建失败");
+    },
   });
 
   const dropEntry = useMutation({
