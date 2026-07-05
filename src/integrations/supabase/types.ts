@@ -22,6 +22,7 @@ export type Database = {
           entry_date: string
           goal_title_snapshot: string
           id: string
+          priority: number
           subgoal_title_snapshot: string
           task_id: string | null
           title_snapshot: string
@@ -34,6 +35,7 @@ export type Database = {
           entry_date?: string
           goal_title_snapshot: string
           id?: string
+          priority?: number
           subgoal_title_snapshot: string
           task_id?: string | null
           title_snapshot: string
@@ -46,6 +48,7 @@ export type Database = {
           entry_date?: string
           goal_title_snapshot?: string
           id?: string
+          priority?: number
           subgoal_title_snapshot?: string
           task_id?: string | null
           title_snapshot?: string
