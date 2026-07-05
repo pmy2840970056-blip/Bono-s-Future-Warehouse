@@ -1,5 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import TaskPlanner from "@/components/TaskPlanner";
+
+const authenticatedRoute = getRouteApi("/_authenticated");
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -11,5 +13,10 @@ export const Route = createFileRoute("/_authenticated/")({
       { property: "og:type", content: "website" },
     ],
   }),
-  component: TaskPlanner,
+  component: PlannerRoute,
 });
+
+function PlannerRoute() {
+  const { user } = authenticatedRoute.useRouteContext();
+  return <TaskPlanner initialUserId={user.id} initialUserEmail={user.email ?? ""} />;
+}

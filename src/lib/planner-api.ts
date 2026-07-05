@@ -120,7 +120,7 @@ export async function createDailyEntry(
       subgoal_title_snapshot: payload.subGoalTitle,
       color_snapshot: payload.color,
     })
-    .select()
+    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at")
     .single();
   if (error) throw error;
   return data;
