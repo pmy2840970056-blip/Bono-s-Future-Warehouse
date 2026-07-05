@@ -399,10 +399,11 @@ function DailyBrick({
   return (
     <div
       className={cn(
-        "group relative rounded-xl border-2 border-ink bg-card p-4 shadow-brick transition-all",
-        "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick-lg",
-        !animating && "animate-brick-drop",
-        task.done && "animate-brick-fade",
+        "group relative rounded-xl border-2 border-ink p-4 transition-all",
+        task.done
+          ? "bg-done/50 shadow-brick-sm opacity-70"
+          : "bg-card shadow-brick hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick-lg",
+        !animating && !task.done && "animate-brick-drop",
       )}
     >
       <div className="flex items-start gap-3">
@@ -526,11 +527,13 @@ export default function TaskPlanner() {
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
   const usedIds = useMemo(
-    () => new Set(daily.filter((d) => !d.done).map((d) => d.taskId).filter(Boolean)),
+    () => new Set(daily.map((d) => d.taskId).filter(Boolean) as string[]),
     [daily],
   );
-  const activeCount = daily.filter((d) => !d.done).length;
-  const doneCount = daily.filter((d) => d.done).length;
+  const activeDaily = useMemo(() => daily.filter((d) => !d.done), [daily]);
+  const doneDaily = useMemo(() => daily.filter((d) => d.done), [daily]);
+  const activeCount = activeDaily.length;
+  const doneCount = doneDaily.length;
 
   const addGoal = useMutation({
     mutationFn: (title: string) =>
@@ -563,17 +566,21 @@ export default function TaskPlanner() {
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
         (old ?? []).map((t) => (t.id === id ? { ...t, done: true } : t)),
       );
-      // Remove after fade animation
-      setTimeout(async () => {
-        await removeDailyEntry(id);
-        qc.invalidateQueries({ queryKey: ["daily", userId] });
-      }, 900);
       return { prev };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
     },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
   });
+
+  const clearDone = useMutation({
+    mutationFn: async () => {
+      await Promise.all(doneDaily.map((d) => removeDailyEntry(d.id)));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
+  });
+
 
   const seed = useMutation({
     mutationFn: () => seedSampleData(userId!),
@@ -732,7 +739,7 @@ export default function TaskPlanner() {
             </div>
 
             <div className="space-y-3">
-              {daily.map((t) => (
+              {activeDaily.map((t) => (
                 <DailyBrick
                   key={t.id}
                   task={t}
@@ -742,7 +749,42 @@ export default function TaskPlanner() {
                 />
               ))}
               <DropZone isOver={isOver} hasTasks={daily.length > 0} />
+
+              {doneCount > 0 && (
+                <div className="pt-4">
+                  <div className="mb-2 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md border-2 border-ink bg-done px-2 py-0.5 text-xs font-bold shadow-brick-sm">
+                        已完成 {doneCount}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        今天已经消掉 {doneCount} 块 · 继续加油
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) clearDone.mutate();
+                      }}
+                      className="text-[11px] font-bold text-muted-foreground hover:text-ink"
+                    >
+                      清空
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {doneDaily.map((t) => (
+                      <DailyBrick
+                        key={t.id}
+                        task={t}
+                        userId={userId!}
+                        onToggle={(id) => doneEntry.mutate(id)}
+                        animating
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
           </section>
         </main>
       </div>
