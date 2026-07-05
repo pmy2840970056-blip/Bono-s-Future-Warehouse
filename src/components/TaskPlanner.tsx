@@ -263,11 +263,17 @@ function SubGoalBlock({
   });
   const delTask = useMutation({
     mutationFn: (id: string) => deleteTask(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxDelete();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
   });
   const delSub = useMutation({
     mutationFn: () => deleteSubgoal(sub.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxDelete();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
   });
 
   return (
