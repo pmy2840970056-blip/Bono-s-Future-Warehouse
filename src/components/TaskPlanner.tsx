@@ -503,7 +503,10 @@ export default function TaskPlanner() {
   const addGoal = useMutation({
     mutationFn: (title: string) =>
       createGoal(userId!, title, CYCLE[goals.length % CYCLE.length], goals.length),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxPop();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "创建失败"),
   });
 
