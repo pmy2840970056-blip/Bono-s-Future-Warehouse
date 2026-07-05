@@ -739,7 +739,7 @@ export default function TaskPlanner() {
             </div>
 
             <div className="space-y-3">
-              {daily.map((t) => (
+              {activeDaily.map((t) => (
                 <DailyBrick
                   key={t.id}
                   task={t}
@@ -749,7 +749,42 @@ export default function TaskPlanner() {
                 />
               ))}
               <DropZone isOver={isOver} hasTasks={daily.length > 0} />
+
+              {doneCount > 0 && (
+                <div className="pt-4">
+                  <div className="mb-2 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md border-2 border-ink bg-done px-2 py-0.5 text-xs font-bold shadow-brick-sm">
+                        已完成 {doneCount}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        今天已经消掉 {doneCount} 块 · 继续加油
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) clearDone.mutate();
+                      }}
+                      className="text-[11px] font-bold text-muted-foreground hover:text-ink"
+                    >
+                      清空
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {doneDaily.map((t) => (
+                      <DailyBrick
+                        key={t.id}
+                        task={t}
+                        userId={userId!}
+                        onToggle={(id) => doneEntry.mutate(id)}
+                        animating
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
           </section>
         </main>
       </div>
