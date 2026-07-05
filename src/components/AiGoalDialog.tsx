@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { decomposeGoal, type DecomposedTree } from "@/lib/ai.functions";
 import { createGoal, createSubgoal, createTask } from "@/lib/planner-api";
 import type { BrickColor } from "@/lib/planner-types";
+import { sfxCheer, sfxPop } from "@/lib/sfx";
 import {
   Dialog,
   DialogContent,
