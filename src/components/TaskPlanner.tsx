@@ -621,11 +621,23 @@ export default function TaskPlanner() {
 
 
   const clearDone = useMutation({
-    mutationFn: async () => {
-      await Promise.all(doneDaily.map((d) => removeDailyEntry(d.id)));
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => removeDailyEntry(id)));
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["daily", userId] }),
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: ["daily", userId] });
+      const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      const set = new Set(ids);
+      qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
+        (old ?? []).filter((t) => !set.has(t.id)),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+    },
   });
+
 
 
   const seed = useMutation({
