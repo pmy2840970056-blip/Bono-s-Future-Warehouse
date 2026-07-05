@@ -665,6 +665,7 @@ export default function TaskPlanner() {
                 <DailyBrick
                   key={t.id}
                   task={t}
+                  userId={userId!}
                   onToggle={(id) => doneEntry.mutate(id)}
                   animating={justDroppedId !== t.id}
                 />
