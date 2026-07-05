@@ -332,7 +332,10 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
   });
   const delGoal = useMutation({
     mutationFn: () => deleteGoal(goal.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onSuccess: () => {
+      sfxDelete();
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
+    },
   });
 
   return (
