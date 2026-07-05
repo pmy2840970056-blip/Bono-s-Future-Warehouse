@@ -684,7 +684,14 @@ export default function TaskPlanner({
     () => new Set(daily.map((d) => d.taskId).filter(Boolean) as string[]),
     [daily],
   );
-  const activeDaily = useMemo(() => daily.filter((d) => !d.done), [daily]);
+  const activeDaily = useMemo(
+    () =>
+      daily
+        .filter((d) => !d.done)
+        .slice()
+        .sort((a, b) => a.priority - b.priority),
+    [daily],
+  );
   const doneDaily = useMemo(() => daily.filter((d) => d.done), [daily]);
   const activeCount = activeDaily.length;
   const doneCount = doneDaily.length;
