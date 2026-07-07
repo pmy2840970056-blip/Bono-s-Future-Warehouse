@@ -993,6 +993,14 @@ export default function TaskPlanner({
                 <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                 <span className="hidden sm:inline">AI 拆解</span>
               </button>
+              <Link
+                to="/calendar"
+                className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+                aria-label="日历视图"
+                title="日历视图"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </Link>
               <MuteButton />
               <div className="hidden md:block text-xs text-muted-foreground">{userEmail}</div>
 
