@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { AiGoalDialog } from "@/components/AiGoalDialog";
 import { TaskAttachments } from "@/components/TaskAttachments";
 import { fetchAttachmentCounts } from "@/lib/attachments-api";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import {
   isMuted,
   sfxCheer,
