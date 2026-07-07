@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   GripVertical,
