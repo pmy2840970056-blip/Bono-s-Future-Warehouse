@@ -56,6 +56,37 @@ export async function fetchTodayEntries(userId: string): Promise<DailyTask[]> {
   }));
 }
 
+export type DatedEntry = DailyTask & { date: string };
+
+export async function fetchEntriesInRange(
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Promise<DatedEntry[]> {
+  const { data, error } = await supabase
+    .from("daily_entries")
+    .select("id, task_id, title_snapshot, goal_title_snapshot, subgoal_title_snapshot, color_snapshot, done_at, priority, entry_date")
+    .eq("user_id", userId)
+    .gte("entry_date", startDate)
+    .lte("entry_date", endDate)
+    .order("entry_date", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((d) => ({
+    id: d.id,
+    taskId: d.task_id ?? "",
+    title: d.title_snapshot,
+    goalTitle: d.goal_title_snapshot,
+    subGoalTitle: d.subgoal_title_snapshot,
+    color: d.color_snapshot as BrickColor,
+    done: !!d.done_at,
+    priority: ((d as { priority?: number }).priority ?? 2) as Priority,
+    date: d.entry_date,
+  }));
+}
+
 export async function createGoal(userId: string, title: string, color: BrickColor, sortOrder: number) {
   const { data, error } = await supabase
     .from("goals")
