@@ -33,6 +33,21 @@ export async function fetchGoalsTree(userId: string): Promise<Goal[]> {
   }));
 }
 
+export async function fetchCompletedTaskIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("daily_entries")
+    .select("task_id")
+    .eq("user_id", userId)
+    .not("done_at", "is", null)
+    .not("task_id", "is", null);
+  if (error) throw error;
+  const set = new Set<string>();
+  for (const row of data ?? []) {
+    if (row.task_id) set.add(row.task_id);
+  }
+  return Array.from(set);
+}
+
 export async function fetchTodayEntries(userId: string): Promise<DailyTask[]> {
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
