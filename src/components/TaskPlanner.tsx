@@ -13,10 +13,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronRight,
   GripVertical,
   LogOut,
+  Package,
   Plus,
   Sparkles,
   Target,
