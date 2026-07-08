@@ -205,6 +205,8 @@ function LeafTaskBrick({
   goal,
   sub,
   usedIds,
+  completedIds,
+  justCompletedIds,
   userId,
   onDelete,
 }: {
@@ -212,10 +214,14 @@ function LeafTaskBrick({
   goal: Goal;
   sub: SubGoal;
   usedIds: Set<string>;
+  completedIds: Set<string>;
+  justCompletedIds: Set<string>;
   userId: string;
   onDelete: () => void;
 }) {
+  const completed = completedIds.has(task.id);
   const used = usedIds.has(task.id);
+  const justDone = justCompletedIds.has(task.id);
   const payload: DragPayload = {
     taskId: task.id,
     title: task.title,
@@ -226,21 +232,23 @@ function LeafTaskBrick({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `leaf-${task.id}`,
     data: payload,
-    disabled: used,
+    disabled: used || completed,
   });
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "group relative flex items-center gap-2 rounded-lg border-2 border-ink bg-card px-3 py-2.5",
-        "shadow-brick-sm transition-all select-none",
+        "group relative flex items-center gap-2 rounded-lg border-2 border-ink px-3 py-2.5 transition-all select-none",
         "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:rounded-l-md",
         colorRing[goal.color],
-        used
-          ? "opacity-40"
-          : "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
+        completed
+          ? "bg-muted/60 shadow-none opacity-60 before:opacity-30 grayscale"
+          : "bg-card shadow-brick-sm",
+        !completed && used && "opacity-40",
+        !completed && !used && "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
         isDragging && "opacity-30",
+        justDone && "animate-brick-drop",
       )}
     >
       <div
@@ -248,18 +256,37 @@ function LeafTaskBrick({
         {...listeners}
         className={cn(
           "flex flex-1 items-center gap-2 min-w-0",
-          used ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
+          completed || used ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
         )}
       >
-        <GripVertical className="ml-1 h-4 w-4 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-100" />
-        <span className="min-w-0 flex-1 text-sm font-medium leading-snug">{task.title}</span>
+        {completed ? (
+          <span
+            className={cn(
+              "ml-1 grid h-4 w-4 shrink-0 place-items-center rounded-sm border border-ink/60 bg-done text-ink",
+              justDone && "animate-brick-shake",
+            )}
+            aria-label="已完成"
+          >
+            <Check className="h-3 w-3" strokeWidth={4} />
+          </span>
+        ) : (
+          <GripVertical className="ml-1 h-4 w-4 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-100" />
+        )}
+        <span
+          className={cn(
+            "min-w-0 flex-1 text-sm font-medium leading-snug",
+            completed && "line-through text-muted-foreground",
+          )}
+        >
+          {task.title}
+        </span>
       </div>
-      {used && (
+      {!completed && used && (
         <span className="shrink-0 rounded border border-ink bg-done px-1.5 py-0.5 text-[10px] font-bold uppercase">
           已安排
         </span>
       )}
-      <TaskAttachments taskId={task.id} userId={userId} compact />
+      {!completed && <TaskAttachments taskId={task.id} userId={userId} compact />}
       <button
         onClick={onDelete}
         className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition"
@@ -270,6 +297,7 @@ function LeafTaskBrick({
     </div>
   );
 }
+
 
 function SubGoalBlock({
   sub,
