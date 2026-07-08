@@ -303,14 +303,22 @@ function SubGoalBlock({
   sub,
   goal,
   usedIds,
+  completedIds,
+  justCompletedIds,
   userId,
 }: {
   sub: SubGoal;
   goal: Goal;
   usedIds: Set<string>;
+  completedIds: Set<string>;
+  justCompletedIds: Set<string>;
   userId: string;
 }) {
   const [open, setOpen] = useState(true);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const activeTasks = useMemo(() => sub.tasks.filter((t) => !completedIds.has(t.id)), [sub.tasks, completedIds]);
+  const archivedTasks = useMemo(() => sub.tasks.filter((t) => completedIds.has(t.id)), [sub.tasks, completedIds]);
+  const allDone = sub.tasks.length > 0 && archivedTasks.length === sub.tasks.length;
   const qc = useQueryClient();
 
   const addTask = useMutation({
