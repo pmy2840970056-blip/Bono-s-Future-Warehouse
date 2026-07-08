@@ -865,7 +865,7 @@ export default function TaskPlanner({
 
   // Track newly-completed task ids for a brief animation.
   const [justCompletedIds, setJustCompletedIds] = useState<Set<string>>(new Set());
-  const prevCompletedRef = React.useRef<Set<string>>(new Set());
+  const prevCompletedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const prev = prevCompletedRef.current;
     const added: string[] = [];
