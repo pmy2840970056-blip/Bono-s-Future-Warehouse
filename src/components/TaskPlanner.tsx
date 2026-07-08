@@ -418,8 +418,15 @@ function SubGoalBlock({
           className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-ink"
         >
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          {sub.title}
-          <span className="ml-1 text-[10px] opacity-60">({sub.tasks.length})</span>
+          <span className={cn(allDone && "line-through opacity-60")}>{sub.title}</span>
+          <span className="ml-1 text-[10px] opacity-60">
+            ({archivedTasks.length}/{sub.tasks.length})
+          </span>
+          {allDone && (
+            <span className="ml-1 rounded border border-ink bg-done px-1 py-px text-[9px] font-bold">
+              全部完成
+            </span>
+          )}
         </button>
         <button
           onClick={() => {
@@ -432,25 +439,74 @@ function SubGoalBlock({
       </div>
       {open && (
         <div className="space-y-2">
-          {sub.tasks.map((t) => (
+          {activeTasks.map((t) => (
             <LeafTaskBrick
               key={t.id}
               task={t}
               goal={goal}
               sub={sub}
               usedIds={usedIds}
+              completedIds={completedIds}
+              justCompletedIds={justCompletedIds}
               userId={userId}
               onDelete={() => delTask.mutate(t.id)}
             />
           ))}
           <InlineAdd placeholder="添加任务" small onAdd={(v) => addTask.mutateAsync(v)} />
+
+          {archivedTasks.length > 0 && (
+            <div className="mt-2 rounded-md border-2 border-dashed border-ink/25 bg-muted/30 p-2">
+              <button
+                onClick={() => setArchiveOpen((o) => !o)}
+                className="flex w-full items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-ink"
+              >
+                {archiveOpen ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+                <Package className="h-3 w-3" />
+                已完成收纳箱
+                <span className="opacity-70">({archivedTasks.length})</span>
+              </button>
+              {archiveOpen && (
+                <div className="mt-2 space-y-2">
+                  {archivedTasks.map((t) => (
+                    <LeafTaskBrick
+                      key={t.id}
+                      task={t}
+                      goal={goal}
+                      sub={sub}
+                      usedIds={usedIds}
+                      completedIds={completedIds}
+                      justCompletedIds={justCompletedIds}
+                      userId={userId}
+                      onDelete={() => delTask.mutate(t.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>; userId: string }) {
+function GoalBlock({
+  goal,
+  usedIds,
+  completedIds,
+  justCompletedIds,
+  userId,
+}: {
+  goal: Goal;
+  usedIds: Set<string>;
+  completedIds: Set<string>;
+  justCompletedIds: Set<string>;
+  userId: string;
+}) {
   const [open, setOpen] = useState(true);
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
