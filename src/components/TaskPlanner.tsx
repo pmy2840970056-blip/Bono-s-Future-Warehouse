@@ -849,8 +849,43 @@ export default function TaskPlanner({
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
+  const completedQ = useQuery({
+    queryKey: ["completed-tasks", userId],
+    queryFn: () => fetchCompletedTaskIds(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
+  const completedIds = useMemo(
+    () => new Set(completedQ.data ?? []),
+    [completedQ.data],
+  );
+
+  // Track newly-completed task ids for a brief animation.
+  const [justCompletedIds, setJustCompletedIds] = useState<Set<string>>(new Set());
+  const prevCompletedRef = React.useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const prev = prevCompletedRef.current;
+    const added: string[] = [];
+    for (const id of completedIds) if (!prev.has(id)) added.push(id);
+    prevCompletedRef.current = completedIds;
+    if (added.length === 0) return;
+    setJustCompletedIds((s) => {
+      const next = new Set(s);
+      for (const id of added) next.add(id);
+      return next;
+    });
+    const timer = window.setTimeout(() => {
+      setJustCompletedIds((s) => {
+        const next = new Set(s);
+        for (const id of added) next.delete(id);
+        return next;
+      });
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [completedIds]);
   const allTaskIds = useMemo(
     () => goals.flatMap((goal) => goal.subgoals.flatMap((sub) => sub.tasks.map((task) => task.id))),
     [goals],
