@@ -1012,15 +1012,39 @@ export default function TaskPlanner({
     onMutate: async ({ id, done }) => {
       await qc.cancelQueries({ queryKey: ["daily", userId] });
       const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      const prevCompleted = qc.getQueryData<string[]>(["completed-tasks", userId]);
+      const entry = (prev ?? []).find((t) => t.id === id);
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
         (old ?? []).map((t) => (t.id === id ? { ...t, done: !done } : t)),
       );
-      return { prev };
+      if (entry?.taskId) {
+        if (!done) {
+          qc.setQueryData<string[]>(["completed-tasks", userId], (old) => {
+            const set = new Set(old ?? []);
+            set.add(entry.taskId);
+            return Array.from(set);
+          });
+        } else {
+          const stillDone = (prev ?? []).some(
+            (t) => t.id !== id && t.taskId === entry.taskId && t.done,
+          );
+          if (!stillDone) {
+            qc.setQueryData<string[]>(["completed-tasks", userId], (old) =>
+              (old ?? []).filter((tid) => tid !== entry.taskId),
+            );
+          }
+        }
+      }
+      return { prev, prevCompleted };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+      if (ctx?.prevCompleted !== undefined)
+        qc.setQueryData(["completed-tasks", userId], ctx.prevCompleted);
     },
-    // No onSettled refetch — optimistic value already matches server state.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["completed-tasks", userId] });
+    },
   });
 
   const setPriority = useMutation({
