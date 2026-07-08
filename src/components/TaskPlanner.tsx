@@ -53,6 +53,7 @@ import {
   deleteGoal,
   deleteSubgoal,
   deleteTask,
+  fetchCompletedTaskIds,
   fetchGoalsTree,
   fetchTodayEntries,
   markDailyEntryDone,
