@@ -1199,7 +1199,14 @@ export default function TaskPlanner({
               )}
 
               {goals.map((g) => (
-                <GoalBlock key={g.id} goal={g} usedIds={usedIds} userId={userId!} />
+                <GoalBlock
+                  key={g.id}
+                  goal={g}
+                  usedIds={usedIds}
+                  completedIds={completedIds}
+                  justCompletedIds={justCompletedIds}
+                  userId={userId!}
+                />
               ))}
 
               {userId && (
