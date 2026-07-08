@@ -511,7 +511,7 @@ function GoalBlock({
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
   const done = goal.subgoals.reduce(
-    (n, s) => n + s.tasks.filter((t) => usedIds.has(t.id)).length,
+    (n, s) => n + s.tasks.filter((t) => completedIds.has(t.id)).length,
     0,
   );
   const pct = total ? Math.round((done / total) * 100) : 0;
