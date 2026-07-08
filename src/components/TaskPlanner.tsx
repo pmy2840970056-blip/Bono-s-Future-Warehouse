@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -13,10 +13,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronRight,
   GripVertical,
   LogOut,
+  Package,
   Plus,
   Sparkles,
   Target,
@@ -51,6 +53,7 @@ import {
   deleteGoal,
   deleteSubgoal,
   deleteTask,
+  fetchCompletedTaskIds,
   fetchGoalsTree,
   fetchTodayEntries,
   markDailyEntryDone,
@@ -202,6 +205,8 @@ function LeafTaskBrick({
   goal,
   sub,
   usedIds,
+  completedIds,
+  justCompletedIds,
   userId,
   onDelete,
 }: {
@@ -209,10 +214,14 @@ function LeafTaskBrick({
   goal: Goal;
   sub: SubGoal;
   usedIds: Set<string>;
+  completedIds: Set<string>;
+  justCompletedIds: Set<string>;
   userId: string;
   onDelete: () => void;
 }) {
+  const completed = completedIds.has(task.id);
   const used = usedIds.has(task.id);
+  const justDone = justCompletedIds.has(task.id);
   const payload: DragPayload = {
     taskId: task.id,
     title: task.title,
@@ -223,21 +232,23 @@ function LeafTaskBrick({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `leaf-${task.id}`,
     data: payload,
-    disabled: used,
+    disabled: used || completed,
   });
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "group relative flex items-center gap-2 rounded-lg border-2 border-ink bg-card px-3 py-2.5",
-        "shadow-brick-sm transition-all select-none",
+        "group relative flex items-center gap-2 rounded-lg border-2 border-ink px-3 py-2.5 transition-all select-none",
         "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:rounded-l-md",
         colorRing[goal.color],
-        used
-          ? "opacity-40"
-          : "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
+        completed
+          ? "bg-muted/60 shadow-none opacity-60 before:opacity-30 grayscale"
+          : "bg-card shadow-brick-sm",
+        !completed && used && "opacity-40",
+        !completed && !used && "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
         isDragging && "opacity-30",
+        justDone && "animate-brick-drop",
       )}
     >
       <div
@@ -245,18 +256,37 @@ function LeafTaskBrick({
         {...listeners}
         className={cn(
           "flex flex-1 items-center gap-2 min-w-0",
-          used ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
+          completed || used ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing",
         )}
       >
-        <GripVertical className="ml-1 h-4 w-4 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-100" />
-        <span className="min-w-0 flex-1 text-sm font-medium leading-snug">{task.title}</span>
+        {completed ? (
+          <span
+            className={cn(
+              "ml-1 grid h-4 w-4 shrink-0 place-items-center rounded-sm border border-ink/60 bg-done text-ink",
+              justDone && "animate-brick-shake",
+            )}
+            aria-label="已完成"
+          >
+            <Check className="h-3 w-3" strokeWidth={4} />
+          </span>
+        ) : (
+          <GripVertical className="ml-1 h-4 w-4 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-100" />
+        )}
+        <span
+          className={cn(
+            "min-w-0 flex-1 text-sm font-medium leading-snug",
+            completed && "line-through text-muted-foreground",
+          )}
+        >
+          {task.title}
+        </span>
       </div>
-      {used && (
+      {!completed && used && (
         <span className="shrink-0 rounded border border-ink bg-done px-1.5 py-0.5 text-[10px] font-bold uppercase">
           已安排
         </span>
       )}
-      <TaskAttachments taskId={task.id} userId={userId} compact />
+      {!completed && <TaskAttachments taskId={task.id} userId={userId} compact />}
       <button
         onClick={onDelete}
         className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition"
@@ -268,18 +298,27 @@ function LeafTaskBrick({
   );
 }
 
+
 function SubGoalBlock({
   sub,
   goal,
   usedIds,
+  completedIds,
+  justCompletedIds,
   userId,
 }: {
   sub: SubGoal;
   goal: Goal;
   usedIds: Set<string>;
+  completedIds: Set<string>;
+  justCompletedIds: Set<string>;
   userId: string;
 }) {
   const [open, setOpen] = useState(true);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const activeTasks = useMemo(() => sub.tasks.filter((t) => !completedIds.has(t.id)), [sub.tasks, completedIds]);
+  const archivedTasks = useMemo(() => sub.tasks.filter((t) => completedIds.has(t.id)), [sub.tasks, completedIds]);
+  const allDone = sub.tasks.length > 0 && archivedTasks.length === sub.tasks.length;
   const qc = useQueryClient();
 
   const addTask = useMutation({
@@ -379,8 +418,15 @@ function SubGoalBlock({
           className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-ink"
         >
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          {sub.title}
-          <span className="ml-1 text-[10px] opacity-60">({sub.tasks.length})</span>
+          <span className={cn(allDone && "line-through opacity-60")}>{sub.title}</span>
+          <span className="ml-1 text-[10px] opacity-60">
+            ({archivedTasks.length}/{sub.tasks.length})
+          </span>
+          {allDone && (
+            <span className="ml-1 rounded border border-ink bg-done px-1 py-px text-[9px] font-bold">
+              全部完成
+            </span>
+          )}
         </button>
         <button
           onClick={() => {
@@ -393,30 +439,79 @@ function SubGoalBlock({
       </div>
       {open && (
         <div className="space-y-2">
-          {sub.tasks.map((t) => (
+          {activeTasks.map((t) => (
             <LeafTaskBrick
               key={t.id}
               task={t}
               goal={goal}
               sub={sub}
               usedIds={usedIds}
+              completedIds={completedIds}
+              justCompletedIds={justCompletedIds}
               userId={userId}
               onDelete={() => delTask.mutate(t.id)}
             />
           ))}
           <InlineAdd placeholder="添加任务" small onAdd={(v) => addTask.mutateAsync(v)} />
+
+          {archivedTasks.length > 0 && (
+            <div className="mt-2 rounded-md border-2 border-dashed border-ink/25 bg-muted/30 p-2">
+              <button
+                onClick={() => setArchiveOpen((o) => !o)}
+                className="flex w-full items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-ink"
+              >
+                {archiveOpen ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+                <Package className="h-3 w-3" />
+                已完成收纳箱
+                <span className="opacity-70">({archivedTasks.length})</span>
+              </button>
+              {archiveOpen && (
+                <div className="mt-2 space-y-2">
+                  {archivedTasks.map((t) => (
+                    <LeafTaskBrick
+                      key={t.id}
+                      task={t}
+                      goal={goal}
+                      sub={sub}
+                      usedIds={usedIds}
+                      completedIds={completedIds}
+                      justCompletedIds={justCompletedIds}
+                      userId={userId}
+                      onDelete={() => delTask.mutate(t.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>; userId: string }) {
+function GoalBlock({
+  goal,
+  usedIds,
+  completedIds,
+  justCompletedIds,
+  userId,
+}: {
+  goal: Goal;
+  usedIds: Set<string>;
+  completedIds: Set<string>;
+  justCompletedIds: Set<string>;
+  userId: string;
+}) {
   const [open, setOpen] = useState(true);
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
   const done = goal.subgoals.reduce(
-    (n, s) => n + s.tasks.filter((t) => usedIds.has(t.id)).length,
+    (n, s) => n + s.tasks.filter((t) => completedIds.has(t.id)).length,
     0,
   );
   const pct = total ? Math.round((done / total) * 100) : 0;
@@ -505,7 +600,15 @@ function GoalBlock({ goal, usedIds, userId }: { goal: Goal; usedIds: Set<string>
       {open && (
         <div className="space-y-4 pt-1">
           {goal.subgoals.map((s) => (
-            <SubGoalBlock key={s.id} sub={s} goal={goal} usedIds={usedIds} userId={userId} />
+            <SubGoalBlock
+              key={s.id}
+              sub={s}
+              goal={goal}
+              usedIds={usedIds}
+              completedIds={completedIds}
+              justCompletedIds={justCompletedIds}
+              userId={userId}
+            />
           ))}
           <div className="ml-3 pl-4">
             <InlineAdd placeholder="添加子目标" onAdd={(v) => addSub.mutateAsync(v)} />
@@ -746,8 +849,43 @@ export default function TaskPlanner({
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
+  const completedQ = useQuery({
+    queryKey: ["completed-tasks", userId],
+    queryFn: () => fetchCompletedTaskIds(userId!),
+    enabled: !!userId,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
+  const completedIds = useMemo(
+    () => new Set(completedQ.data ?? []),
+    [completedQ.data],
+  );
+
+  // Track newly-completed task ids for a brief animation.
+  const [justCompletedIds, setJustCompletedIds] = useState<Set<string>>(new Set());
+  const prevCompletedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const prev = prevCompletedRef.current;
+    const added: string[] = [];
+    for (const id of completedIds) if (!prev.has(id)) added.push(id);
+    prevCompletedRef.current = completedIds;
+    if (added.length === 0) return;
+    setJustCompletedIds((s) => {
+      const next = new Set(s);
+      for (const id of added) next.add(id);
+      return next;
+    });
+    const timer = window.setTimeout(() => {
+      setJustCompletedIds((s) => {
+        const next = new Set(s);
+        for (const id of added) next.delete(id);
+        return next;
+      });
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [completedIds]);
   const allTaskIds = useMemo(
     () => goals.flatMap((goal) => goal.subgoals.flatMap((sub) => sub.tasks.map((task) => task.id))),
     [goals],
@@ -874,15 +1012,39 @@ export default function TaskPlanner({
     onMutate: async ({ id, done }) => {
       await qc.cancelQueries({ queryKey: ["daily", userId] });
       const prev = qc.getQueryData<DailyTask[]>(["daily", userId]);
+      const prevCompleted = qc.getQueryData<string[]>(["completed-tasks", userId]);
+      const entry = (prev ?? []).find((t) => t.id === id);
       qc.setQueryData<DailyTask[]>(["daily", userId], (old) =>
         (old ?? []).map((t) => (t.id === id ? { ...t, done: !done } : t)),
       );
-      return { prev };
+      if (entry?.taskId) {
+        if (!done) {
+          qc.setQueryData<string[]>(["completed-tasks", userId], (old) => {
+            const set = new Set(old ?? []);
+            set.add(entry.taskId);
+            return Array.from(set);
+          });
+        } else {
+          const stillDone = (prev ?? []).some(
+            (t) => t.id !== id && t.taskId === entry.taskId && t.done,
+          );
+          if (!stillDone) {
+            qc.setQueryData<string[]>(["completed-tasks", userId], (old) =>
+              (old ?? []).filter((tid) => tid !== entry.taskId),
+            );
+          }
+        }
+      }
+      return { prev, prevCompleted };
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
+      if (ctx?.prevCompleted !== undefined)
+        qc.setQueryData(["completed-tasks", userId], ctx.prevCompleted);
     },
-    // No onSettled refetch — optimistic value already matches server state.
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["completed-tasks", userId] });
+    },
   });
 
   const setPriority = useMutation({
@@ -1061,7 +1223,14 @@ export default function TaskPlanner({
               )}
 
               {goals.map((g) => (
-                <GoalBlock key={g.id} goal={g} usedIds={usedIds} userId={userId!} />
+                <GoalBlock
+                  key={g.id}
+                  goal={g}
+                  usedIds={usedIds}
+                  completedIds={completedIds}
+                  justCompletedIds={justCompletedIds}
+                  userId={userId!}
+                />
               ))}
 
               {userId && (
