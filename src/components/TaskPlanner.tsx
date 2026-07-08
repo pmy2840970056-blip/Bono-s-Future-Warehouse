@@ -600,7 +600,15 @@ function GoalBlock({
       {open && (
         <div className="space-y-4 pt-1">
           {goal.subgoals.map((s) => (
-            <SubGoalBlock key={s.id} sub={s} goal={goal} usedIds={usedIds} userId={userId} />
+            <SubGoalBlock
+              key={s.id}
+              sub={s}
+              goal={goal}
+              usedIds={usedIds}
+              completedIds={completedIds}
+              justCompletedIds={justCompletedIds}
+              userId={userId}
+            />
           ))}
           <div className="ml-3 pl-4">
             <InlineAdd placeholder="添加子目标" onAdd={(v) => addSub.mutateAsync(v)} />
