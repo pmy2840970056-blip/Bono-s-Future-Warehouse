@@ -19,12 +19,21 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function friendlyInviteError(msg: string): string {
+  if (msg.includes("INVITE_CODE_REQUIRED")) return "请填写邀请码";
+  if (msg.includes("INVITE_CODE_INVALID")) return "邀请码无效，请联系邀请你的人";
+  if (msg.includes("INVITE_CODE_EXPIRED")) return "邀请码已过期";
+  if (msg.includes("INVITE_CODE_EXHAUSTED")) return "邀请码已被用完";
+  return msg;
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,12 +47,21 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        const code = inviteCode.trim().toUpperCase();
+        if (!code) {
+          toast.error("请填写邀请码");
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { display_name: displayName || email.split("@")[0] },
+            data: {
+              display_name: displayName || email.split("@")[0],
+              invite_code: code,
+            },
           },
         });
         if (error) throw error;
@@ -55,13 +73,18 @@ function AuthPage() {
       }
       navigate({ to: "/", replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "出错了，请重试");
+      const raw = err instanceof Error ? err.message : "出错了，请重试";
+      toast.error(friendlyInviteError(raw));
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
+    if (mode === "signup") {
+      toast.error("首次使用请先用邮箱+邀请码注册，之后可用 Google 登录");
+      return;
+    }
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -143,6 +166,23 @@ function AuthPage() {
                 className="border-2 border-ink"
               />
             </div>
+            {mode === "signup" && (
+              <div>
+                <Label htmlFor="invite">邀请码</Label>
+                <Input
+                  id="invite"
+                  required
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="向邀请你的人索取"
+                  className="border-2 border-ink font-mono tracking-wider"
+                  autoCapitalize="characters"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  内测阶段仅限受邀用户注册。
+                </p>
+              </div>
+            )}
             <Button
               type="submit"
               disabled={loading}

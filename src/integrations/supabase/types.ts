@@ -97,6 +97,54 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          expires_at: string | null
+          max_uses: number
+          note: string | null
+          uses_count: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          max_uses?: number
+          note?: string | null
+          uses_count?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          max_uses?: number
+          note?: string | null
+          uses_count?: number
+        }
+        Relationships: []
+      }
+      invite_redemptions: {
+        Row: {
+          code: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
