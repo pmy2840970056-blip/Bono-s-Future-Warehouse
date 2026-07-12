@@ -19,6 +19,7 @@ import {
   GripVertical,
   LogOut,
   Package,
+  Pencil,
   Plus,
   Sparkles,
   Target,
