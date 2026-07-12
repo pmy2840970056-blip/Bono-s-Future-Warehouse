@@ -573,7 +573,7 @@ function GoalBlock({
   return (
     <div className="rounded-xl border-2 border-ink bg-card p-4 shadow-brick">
       <div className="mb-3 flex items-center gap-3">
-        <button onClick={() => setOpen((o) => !o)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <button onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <div
             className={cn(
               "grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink shadow-brick-sm",
