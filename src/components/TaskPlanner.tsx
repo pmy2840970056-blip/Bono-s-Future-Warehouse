@@ -512,7 +512,7 @@ function GoalBlock({
   open: boolean;
   onToggle: () => void;
 }) {
-  const setOpen = (_: unknown) => onToggle();
+  void setOpen;
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
   const done = goal.subgoals.reduce(
