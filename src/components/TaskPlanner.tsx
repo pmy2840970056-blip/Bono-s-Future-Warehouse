@@ -572,10 +572,42 @@ function GoalBlock({
     },
   });
 
+  const [editing, setEditing] = useState(false);
+  const [editVal, setEditVal] = useState(goal.title);
+  const renameGoal = useMutation({
+    mutationFn: (title: string) => updateGoalTitle(goal.id, title),
+    onMutate: async (title) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const prev = qc.getQueryData<Goal[]>(["goals", userId]);
+      qc.setQueryData<Goal[]>(["goals", userId], (old) =>
+        (old ?? []).map((g) => (g.id === goal.id ? { ...g, title } : g)),
+      );
+      return { prev };
+    },
+    onError: (e, _title, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
+      toast.error(e instanceof Error ? e.message : "重命名失败");
+    },
+  });
+
+  const submitRename = () => {
+    const next = editVal.trim();
+    setEditing(false);
+    if (!next || next === goal.title) {
+      setEditVal(goal.title);
+      return;
+    }
+    renameGoal.mutate(next);
+  };
+
   return (
     <div className="rounded-xl border-2 border-ink bg-card p-4 shadow-brick">
       <div className="mb-3 flex items-center gap-3">
-        <button onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <button
+          onClick={onToggle}
+          disabled={editing}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default"
+        >
           <div
             className={cn(
               "grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink shadow-brick-sm",
@@ -585,7 +617,38 @@ function GoalBlock({
             <Target className="h-4 w-4 text-ink" strokeWidth={2.5} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-bold">{goal.title}</h3>
+            {editing ? (
+              <Input
+                autoFocus
+                value={editVal}
+                onChange={(e) => setEditVal(e.target.value)}
+                onBlur={submitRename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitRename();
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    setEditVal(goal.title);
+                    setEditing(false);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="h-8 border-2 border-ink text-base font-bold"
+              />
+            ) : (
+              <h3
+                className="truncate text-base font-bold"
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  setEditVal(goal.title);
+                  setEditing(true);
+                }}
+                title="双击重命名"
+              >
+                {goal.title}
+              </h3>
+            )}
             <div className="mt-1 flex items-center gap-2">
               <div className="h-2 flex-1 overflow-hidden rounded-full border border-ink bg-background">
                 <div className={cn("h-full transition-all", colorClass[goal.color])} style={{ width: `${pct}%` }} />
@@ -597,9 +660,21 @@ function GoalBlock({
         </button>
         <button
           onClick={() => {
+            setEditVal(goal.title);
+            setEditing(true);
+          }}
+          className="opacity-30 hover:opacity-100"
+          aria-label="重命名目标"
+          title="重命名"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => {
             if (confirm(`删除目标「${goal.title}」及其下所有内容？`)) delGoal.mutate();
           }}
           className="opacity-30 hover:opacity-100"
+          aria-label="删除目标"
         >
           <Trash2 className="h-4 w-4" />
         </button>
