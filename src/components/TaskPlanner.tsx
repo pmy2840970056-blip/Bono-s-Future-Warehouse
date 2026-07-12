@@ -1279,8 +1279,33 @@ export default function TaskPlanner({
         </header>
 
 
-        <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <section>
+        {/* Mobile tab switcher */}
+        <div className="sticky top-0 z-20 border-b-2 border-ink bg-background/95 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-7xl gap-2 px-3 py-2">
+            <button
+              onClick={() => setMobileTab("goals")}
+              className={cn(
+                "flex-1 rounded-md border-2 border-ink px-3 py-2 text-sm font-bold shadow-brick-sm transition",
+                mobileTab === "goals" ? "bg-brick-1" : "bg-card text-muted-foreground",
+              )}
+            >
+              长期目标 <span className="ml-1 opacity-70">({goals.length})</span>
+            </button>
+            <button
+              onClick={() => setMobileTab("today")}
+              className={cn(
+                "flex-1 rounded-md border-2 border-ink px-3 py-2 text-sm font-bold shadow-brick-sm transition",
+                mobileTab === "today" ? "bg-brick-2" : "bg-card text-muted-foreground",
+              )}
+            >
+              今天要做 <span className="ml-1 opacity-70">({activeCount})</span>
+            </button>
+          </div>
+        </div>
+
+        <main className="mx-auto grid max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <section className={cn(mobileTab === "goals" ? "block" : "hidden", "lg:block")}>
+
             <div className="mb-4 flex items-end justify-between">
               <div>
                 <h2 className="text-2xl font-black">长期目标</h2>
