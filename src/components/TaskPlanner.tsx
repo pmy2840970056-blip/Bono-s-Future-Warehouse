@@ -1230,42 +1230,43 @@ export default function TaskPlanner({
     >
       <div className="min-h-screen">
         <header className="border-b-2 border-ink bg-card">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm">
-                <Sparkles className="h-5 w-5" strokeWidth={2.5} />
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6 sm:py-4">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm sm:h-10 sm:w-10">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.5} />
               </div>
-              <div>
-                <h1 className="text-xl font-black tracking-tight">积木清单</h1>
-                <p className="text-xs text-muted-foreground">把长期目标拆成今天能做的一块</p>
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-black tracking-tight sm:text-xl">积木清单</h1>
+                <p className="hidden text-xs text-muted-foreground sm:block">把长期目标拆成今天能做的一块</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:block rounded-lg border-2 border-ink bg-background px-3 py-1.5 font-mono text-xs font-bold shadow-brick-sm">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <div className="hidden rounded-lg border-2 border-ink bg-background px-3 py-1.5 font-mono text-xs font-bold shadow-brick-sm sm:block">
                 {today}
               </div>
               <button
                 onClick={() => setAiOpen(true)}
                 disabled={!userId}
-                className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-3 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50"
+                aria-label="AI 拆解"
+                className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-2 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50 sm:px-3"
               >
                 <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                 <span className="hidden sm:inline">AI 拆解</span>
               </button>
               <Link
                 to="/calendar"
-                className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
                 aria-label="日历视图"
                 title="日历视图"
               >
                 <CalendarDays className="h-4 w-4" />
               </Link>
               <MuteButton />
-              <div className="hidden md:block text-xs text-muted-foreground">{userEmail}</div>
+              <div className="hidden text-xs text-muted-foreground md:block">{userEmail}</div>
 
               <button
                 onClick={handleSignOut}
-                className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
                 aria-label="退出登录"
                 title="退出登录"
               >
@@ -1274,6 +1275,7 @@ export default function TaskPlanner({
             </div>
           </div>
         </header>
+
 
         <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section>
