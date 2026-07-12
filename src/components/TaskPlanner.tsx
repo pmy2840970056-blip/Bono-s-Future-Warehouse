@@ -943,6 +943,8 @@ export default function TaskPlanner({
 
   // Collapsed goal ids (default: all expanded). Toggled per-goal, and via bulk buttons.
   const [collapsedGoalIds, setCollapsedGoalIds] = useState<Set<string>>(new Set());
+  const [mobileTab, setMobileTab] = useState<"goals" | "today">("goals");
+
   const toggleGoalCollapsed = (id: string) =>
     setCollapsedGoalIds((prev) => {
       const next = new Set(prev);
