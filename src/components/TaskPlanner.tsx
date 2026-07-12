@@ -1384,7 +1384,7 @@ export default function TaskPlanner({
             </div>
           </section>
 
-          <section>
+          <section className={cn(mobileTab === "today" ? "block" : "hidden", "lg:block")}>
             <div className="mb-4 flex items-end justify-between">
               <div>
                 <h2 className="text-2xl font-black">今天要做</h2>
