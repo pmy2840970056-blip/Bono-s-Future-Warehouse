@@ -863,6 +863,21 @@ export default function TaskPlanner({
   });
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
+
+  // Collapsed goal ids (default: all expanded). Toggled per-goal, and via bulk buttons.
+  const [collapsedGoalIds, setCollapsedGoalIds] = useState<Set<string>>(new Set());
+  const toggleGoalCollapsed = (id: string) =>
+    setCollapsedGoalIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allCollapsed = goals.length > 0 && goals.every((g) => collapsedGoalIds.has(g.id));
+  const collapseAllGoals = () => {
+    if (allCollapsed) setCollapsedGoalIds(new Set());
+    else setCollapsedGoalIds(new Set(goals.map((g) => g.id)));
+  };
   const completedIds = useMemo(
     () => new Set(completedQ.data ?? []),
     [completedQ.data],
