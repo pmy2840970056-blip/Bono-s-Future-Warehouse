@@ -140,9 +140,6 @@ export async function updateGoalTitle(id: string, title: string) {
   const { error } = await supabase.from("goals").update({ title }).eq("id", id);
   if (error) throw error;
 }
-  const { error } = await supabase.from("goals").delete().eq("id", id);
-  if (error) throw error;
-}
 export async function deleteSubgoal(id: string) {
   const { error } = await supabase.from("subgoals").delete().eq("id", id);
   if (error) throw error;
