@@ -1205,9 +1205,26 @@ export default function TaskPlanner({
                 <h2 className="text-2xl font-black">长期目标</h2>
                 <p className="text-sm text-muted-foreground">拆到能立刻动手的那一块</p>
               </div>
-              <span className="rounded-md border-2 border-ink bg-brick-4 px-2 py-1 text-xs font-bold shadow-brick-sm">
-                {goals.length} 个目标
-              </span>
+              <div className="flex items-center gap-2">
+                {goals.length > 0 && (
+                  <button
+                    onClick={collapseAllGoals}
+                    className="flex items-center gap-1 rounded-md border-2 border-ink bg-background px-2 py-1 text-xs font-bold shadow-brick-sm hover:bg-accent"
+                    aria-label={allCollapsed ? "全部展开" : "全部收起"}
+                    title={allCollapsed ? "全部展开" : "全部收起"}
+                  >
+                    {allCollapsed ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    )}
+                    {allCollapsed ? "展开全部" : "收起全部"}
+                  </button>
+                )}
+                <span className="rounded-md border-2 border-ink bg-brick-4 px-2 py-1 text-xs font-bold shadow-brick-sm">
+                  {goals.length} 个目标
+                </span>
+              </div>
             </div>
 
             <div className="space-y-4">
