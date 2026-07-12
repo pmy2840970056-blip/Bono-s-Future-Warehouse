@@ -501,14 +501,18 @@ function GoalBlock({
   completedIds,
   justCompletedIds,
   userId,
+  open,
+  onToggle,
 }: {
   goal: Goal;
   usedIds: Set<string>;
   completedIds: Set<string>;
   justCompletedIds: Set<string>;
   userId: string;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(true);
+  const setOpen = (_: unknown) => onToggle();
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
   const done = goal.subgoals.reduce(
