@@ -154,6 +154,7 @@ function InlineAdd({
     return (
       <button
         onClick={() => setOpen(true)}
+        aria-label={placeholder}
         className={cn(
           "flex w-full items-center gap-1.5 rounded-md border-2 border-dashed border-ink/30 px-2 py-1.5 text-xs font-bold text-muted-foreground hover:border-ink hover:text-ink hover:bg-background",
           small && "py-1 text-[11px]",
