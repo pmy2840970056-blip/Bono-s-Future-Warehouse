@@ -601,7 +601,8 @@ function GoalBlock({
   };
 
   return (
-    <div className="rounded-xl border-2 border-ink bg-card p-4 shadow-brick">
+    <div className="rounded-xl border-2 border-ink bg-card p-3 shadow-brick sm:p-4">
+
       <div className="mb-3 flex items-center gap-3">
         <button
           onClick={onToggle}
