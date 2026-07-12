@@ -1388,7 +1388,7 @@ export default function TaskPlanner({
           <section className={cn(mobileTab === "today" ? "block" : "hidden", "lg:block")}>
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl font-black">今天要做</h2>
+                <h2 className="text-xl font-black sm:text-2xl">今天要做</h2>
                 <p className="text-sm text-muted-foreground">
                   {activeCount} 块待办 · {doneCount} 块已消除
                 </p>
