@@ -601,7 +601,8 @@ function GoalBlock({
   };
 
   return (
-    <div className="rounded-xl border-2 border-ink bg-card p-4 shadow-brick">
+    <div className="rounded-xl border-2 border-ink bg-card p-3 shadow-brick sm:p-4">
+
       <div className="mb-3 flex items-center gap-3">
         <button
           onClick={onToggle}
@@ -943,6 +944,8 @@ export default function TaskPlanner({
 
   // Collapsed goal ids (default: all expanded). Toggled per-goal, and via bulk buttons.
   const [collapsedGoalIds, setCollapsedGoalIds] = useState<Set<string>>(new Set());
+  const [mobileTab, setMobileTab] = useState<"goals" | "today">("goals");
+
   const toggleGoalCollapsed = (id: string) =>
     setCollapsedGoalIds((prev) => {
       const next = new Set(prev);
@@ -1230,42 +1233,43 @@ export default function TaskPlanner({
     >
       <div className="min-h-screen">
         <header className="border-b-2 border-ink bg-card">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm">
-                <Sparkles className="h-5 w-5" strokeWidth={2.5} />
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6 sm:py-4">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm sm:h-10 sm:w-10">
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.5} />
               </div>
-              <div>
-                <h1 className="text-xl font-black tracking-tight">积木清单</h1>
-                <p className="text-xs text-muted-foreground">把长期目标拆成今天能做的一块</p>
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-black tracking-tight sm:text-xl">积木清单</h1>
+                <p className="hidden text-xs text-muted-foreground sm:block">把长期目标拆成今天能做的一块</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:block rounded-lg border-2 border-ink bg-background px-3 py-1.5 font-mono text-xs font-bold shadow-brick-sm">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <div className="hidden rounded-lg border-2 border-ink bg-background px-3 py-1.5 font-mono text-xs font-bold shadow-brick-sm sm:block">
                 {today}
               </div>
               <button
                 onClick={() => setAiOpen(true)}
                 disabled={!userId}
-                className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-3 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50"
+                aria-label="AI 拆解"
+                className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-2 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50 sm:px-3"
               >
                 <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                 <span className="hidden sm:inline">AI 拆解</span>
               </button>
               <Link
                 to="/calendar"
-                className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
                 aria-label="日历视图"
                 title="日历视图"
               >
                 <CalendarDays className="h-4 w-4" />
               </Link>
               <MuteButton />
-              <div className="hidden md:block text-xs text-muted-foreground">{userEmail}</div>
+              <div className="hidden text-xs text-muted-foreground md:block">{userEmail}</div>
 
               <button
                 onClick={handleSignOut}
-                className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
                 aria-label="退出登录"
                 title="退出登录"
               >
@@ -1275,11 +1279,37 @@ export default function TaskPlanner({
           </div>
         </header>
 
-        <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <section>
+
+        {/* Mobile tab switcher */}
+        <div className="sticky top-0 z-20 border-b-2 border-ink bg-background/95 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-7xl gap-2 px-3 py-2">
+            <button
+              onClick={() => setMobileTab("goals")}
+              className={cn(
+                "flex-1 rounded-md border-2 border-ink px-3 py-2 text-sm font-bold shadow-brick-sm transition",
+                mobileTab === "goals" ? "bg-brick-1" : "bg-card text-muted-foreground",
+              )}
+            >
+              长期目标 <span className="ml-1 opacity-70">({goals.length})</span>
+            </button>
+            <button
+              onClick={() => setMobileTab("today")}
+              className={cn(
+                "flex-1 rounded-md border-2 border-ink px-3 py-2 text-sm font-bold shadow-brick-sm transition",
+                mobileTab === "today" ? "bg-brick-2" : "bg-card text-muted-foreground",
+              )}
+            >
+              今天要做 <span className="ml-1 opacity-70">({activeCount})</span>
+            </button>
+          </div>
+        </div>
+
+        <main className="mx-auto grid max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <section className={cn(mobileTab === "goals" ? "block" : "hidden", "lg:block")}>
+
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl font-black">长期目标</h2>
+                <h2 className="text-xl font-black sm:text-2xl">长期目标</h2>
                 <p className="text-sm text-muted-foreground">拆到能立刻动手的那一块</p>
               </div>
               <div className="flex items-center gap-2">
@@ -1355,10 +1385,10 @@ export default function TaskPlanner({
             </div>
           </section>
 
-          <section>
+          <section className={cn(mobileTab === "today" ? "block" : "hidden", "lg:block")}>
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl font-black">今天要做</h2>
+                <h2 className="text-xl font-black sm:text-2xl">今天要做</h2>
                 <p className="text-sm text-muted-foreground">
                   {activeCount} 块待办 · {doneCount} 块已消除
                 </p>
