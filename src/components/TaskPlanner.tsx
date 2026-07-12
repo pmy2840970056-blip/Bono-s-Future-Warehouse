@@ -1309,7 +1309,7 @@ export default function TaskPlanner({
 
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-2xl font-black">长期目标</h2>
+                <h2 className="text-xl font-black sm:text-2xl">长期目标</h2>
                 <p className="text-sm text-muted-foreground">拆到能立刻动手的那一块</p>
               </div>
               <div className="flex items-center gap-2">
