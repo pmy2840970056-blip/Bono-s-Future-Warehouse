@@ -501,14 +501,18 @@ function GoalBlock({
   completedIds,
   justCompletedIds,
   userId,
+  open,
+  onToggle,
 }: {
   goal: Goal;
   usedIds: Set<string>;
   completedIds: Set<string>;
   justCompletedIds: Set<string>;
   userId: string;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(true);
+  
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
   const done = goal.subgoals.reduce(
@@ -569,7 +573,7 @@ function GoalBlock({
   return (
     <div className="rounded-xl border-2 border-ink bg-card p-4 shadow-brick">
       <div className="mb-3 flex items-center gap-3">
-        <button onClick={() => setOpen((o) => !o)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <button onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <div
             className={cn(
               "grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink shadow-brick-sm",
@@ -859,6 +863,21 @@ export default function TaskPlanner({
   });
   const goals = goalsQ.data ?? [];
   const daily = dailyQ.data ?? [];
+
+  // Collapsed goal ids (default: all expanded). Toggled per-goal, and via bulk buttons.
+  const [collapsedGoalIds, setCollapsedGoalIds] = useState<Set<string>>(new Set());
+  const toggleGoalCollapsed = (id: string) =>
+    setCollapsedGoalIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allCollapsed = goals.length > 0 && goals.every((g) => collapsedGoalIds.has(g.id));
+  const collapseAllGoals = () => {
+    if (allCollapsed) setCollapsedGoalIds(new Set());
+    else setCollapsedGoalIds(new Set(goals.map((g) => g.id)));
+  };
   const completedIds = useMemo(
     () => new Set(completedQ.data ?? []),
     [completedQ.data],
@@ -1186,9 +1205,26 @@ export default function TaskPlanner({
                 <h2 className="text-2xl font-black">长期目标</h2>
                 <p className="text-sm text-muted-foreground">拆到能立刻动手的那一块</p>
               </div>
-              <span className="rounded-md border-2 border-ink bg-brick-4 px-2 py-1 text-xs font-bold shadow-brick-sm">
-                {goals.length} 个目标
-              </span>
+              <div className="flex items-center gap-2">
+                {goals.length > 0 && (
+                  <button
+                    onClick={collapseAllGoals}
+                    className="flex items-center gap-1 rounded-md border-2 border-ink bg-background px-2 py-1 text-xs font-bold shadow-brick-sm hover:bg-accent"
+                    aria-label={allCollapsed ? "全部展开" : "全部收起"}
+                    title={allCollapsed ? "全部展开" : "全部收起"}
+                  >
+                    {allCollapsed ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    )}
+                    {allCollapsed ? "展开全部" : "收起全部"}
+                  </button>
+                )}
+                <span className="rounded-md border-2 border-ink bg-brick-4 px-2 py-1 text-xs font-bold shadow-brick-sm">
+                  {goals.length} 个目标
+                </span>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -1231,6 +1267,8 @@ export default function TaskPlanner({
                   completedIds={completedIds}
                   justCompletedIds={justCompletedIds}
                   userId={userId!}
+                  open={!collapsedGoalIds.has(g.id)}
+                  onToggle={() => toggleGoalCollapsed(g.id)}
                 />
               ))}
 
