@@ -24,11 +24,19 @@ import { cn } from "@/lib/utils";
 
 const authenticatedRoute = getRouteApi("/_authenticated");
 
+const CAL_TITLE = "日历视图 · 积木清单";
+const CAL_DESC =
+  "以日、周、月三种视角回看你的积木任务：查看每天完成了哪几块、这周还有多少待办、按月俯瞰整体进度节奏。";
+
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
     meta: [
-      { title: "日历视图 · 积木清单" },
-      { name: "description", content: "以日 / 周 / 月的视角回看你的积木任务。" },
+      { title: CAL_TITLE },
+      { name: "description", content: CAL_DESC },
+      { property: "og:title", content: CAL_TITLE },
+      { property: "og:description", content: CAL_DESC },
+      { property: "og:type", content: "website" },
+      { name: "robots", content: "noindex" },
     ],
   }),
   component: CalendarPage,
@@ -47,6 +55,12 @@ const priorityDot: Record<Priority, string> = {
   1: "bg-red-500",
   2: "bg-amber-400",
   3: "bg-emerald-500",
+};
+
+const priorityLabel: Record<Priority, string> = {
+  1: "高优先级",
+  2: "中优先级",
+  3: "低优先级",
 };
 
 function fmtDate(d: Date) {
@@ -209,7 +223,11 @@ function EntryChip({ e, compact }: { e: DatedEntry; compact?: boolean }) {
       )}
       title={`${e.goalTitle} › ${e.title}`}
     >
-      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full border border-ink/60", priorityDot[e.priority])} />
+      <span
+        className={cn("h-1.5 w-1.5 shrink-0 rounded-full border border-ink/60", priorityDot[e.priority])}
+        role="img"
+        aria-label={priorityLabel[e.priority]}
+      />
       <span className={cn("truncate", compact ? "max-w-[80px]" : "max-w-[140px]", e.done && "line-through")}>
         {e.title}
       </span>
@@ -266,7 +284,11 @@ function DayEntryRow({ e }: { e: DatedEntry }) {
         e.done && "opacity-70",
       )}
     >
-      <span aria-hidden className={cn("absolute left-0 top-0 h-full w-1.5 border-r-2 border-ink", priorityDot[e.priority])} />
+      <span
+        role="img"
+        aria-label={priorityLabel[e.priority]}
+        className={cn("absolute left-0 top-0 h-full w-1.5 border-r-2 border-ink", priorityDot[e.priority])}
+      />
       <div className="flex-1 min-w-0">
         <div className="mb-0.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
           <span className={cn("rounded border border-ink px-1.5 py-0.5", colorClass[e.color])}>{e.goalTitle}</span>

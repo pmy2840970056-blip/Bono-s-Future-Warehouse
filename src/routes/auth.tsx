@@ -8,11 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const AUTH_TITLE = "登录 / 注册 · 积木清单";
+const AUTH_DESC =
+  "登录或凭邀请码注册积木清单——一款把长期目标拆成今天能做的一小块任务的规划应用，支持邮箱和 Google 登录。";
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "登录 · 积木清单" },
-      { name: "description", content: "登录或注册积木清单，把长期目标拆成今天的一块。" },
+      { title: AUTH_TITLE },
+      { name: "description", content: AUTH_DESC },
+      { property: "og:title", content: AUTH_TITLE },
+      { property: "og:description", content: AUTH_DESC },
+      { property: "og:type", content: "website" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -100,7 +107,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-background px-4 py-10">
+    <main className="min-h-screen grid place-items-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm">
@@ -213,6 +220,6 @@ function AuthPage() {
           注册即表示同意我们的服务条款和隐私政策。
         </p>
       </div>
-    </div>
+    </main>
   );
 }

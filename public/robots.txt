@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /calendar
+
+Sitemap: https://dream-path-maker-77.lovable.app/sitemap.xml
