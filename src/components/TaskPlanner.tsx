@@ -1267,6 +1267,8 @@ export default function TaskPlanner({
                   completedIds={completedIds}
                   justCompletedIds={justCompletedIds}
                   userId={userId!}
+                  open={!collapsedGoalIds.has(g.id)}
+                  onToggle={() => toggleGoalCollapsed(g.id)}
                 />
               ))}
 
