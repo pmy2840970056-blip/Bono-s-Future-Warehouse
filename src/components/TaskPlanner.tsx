@@ -57,6 +57,7 @@ import {
   fetchCompletedTaskIds,
   fetchGoalsTree,
   fetchTodayEntries,
+  updateGoalTitle,
   markDailyEntryDone,
   unmarkDailyEntryDone,
   removeDailyEntry,
