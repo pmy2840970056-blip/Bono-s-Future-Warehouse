@@ -68,7 +68,7 @@ function applyTheme(mode: ThemeMode) {
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, timezone")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -78,7 +78,7 @@ async function fetchProfile(userId: string) {
 async function fetchSettings(userId: string) {
   const { data, error } = await supabase
     .from("user_settings")
-    .select("timezone, daily_limit, language")
+    .select("daily_limit, language")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -105,12 +105,14 @@ function SettingsPage() {
   });
 
   useEffect(() => {
-    if (profileQ.data) setDisplayName(profileQ.data.display_name ?? "");
+    if (profileQ.data) {
+      setDisplayName(profileQ.data.display_name ?? "");
+      setTimezone(profileQ.data.timezone ?? "Asia/Shanghai");
+    }
   }, [profileQ.data]);
   useEffect(() => {
     if (settingsQ.data) {
       setLanguage((settingsQ.data.language as Lang) ?? "zh");
-      setTimezone(settingsQ.data.timezone ?? "Asia/Shanghai");
       setDailyLimit(settingsQ.data.daily_limit ?? 3);
     }
   }, [settingsQ.data]);
@@ -124,13 +126,28 @@ function SettingsPage() {
     mutationFn: async () => {
       const { error } = await supabase
         .from("profiles")
-        .update({ display_name: displayName.trim() || null })
+        .update({ display_name: displayName.trim() || null, timezone })
         .eq("id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profile", userId] });
-      toast.success("昵称已保存");
+      toast.success("已保存");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveSettings = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("user_settings")
+        .update({ language, daily_limit: dailyLimit })
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["settings", userId] });
+      toast.success("设置已保存");
     },
     onError: (e: Error) => toast.error(e.message),
   });
