@@ -298,6 +298,7 @@ function LeafTaskBrick({
           已安排
         </span>
       )}
+      {!completed && !used && <MobileQuickAddButton payload={payload} />}
       {!completed && <TaskAttachments taskId={task.id} userId={userId} compact />}
       <button
         onClick={onDelete}
@@ -307,6 +308,26 @@ function LeafTaskBrick({
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </div>
+  );
+}
+
+function MobileQuickAddButton({ payload }: { payload: DragPayload }) {
+  const quickAdd = useQuickAdd();
+  if (!quickAdd) return null;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        quickAdd(payload);
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 border-ink bg-brick-2 shadow-brick-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-brick-press lg:hidden"
+      aria-label="加入今日待办"
+      title="加入今日待办"
+    >
+      <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+    </button>
   );
 }
 
