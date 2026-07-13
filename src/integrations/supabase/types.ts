@@ -302,6 +302,7 @@ export type Database = {
         Row: {
           created_at: string
           daily_limit: number
+          language: string
           reminder_time: string | null
           updated_at: string
           user_id: string
@@ -310,6 +311,7 @@ export type Database = {
         Insert: {
           created_at?: string
           daily_limit?: number
+          language?: string
           reminder_time?: string | null
           updated_at?: string
           user_id: string
@@ -318,6 +320,7 @@ export type Database = {
         Update: {
           created_at?: string
           daily_limit?: number
+          language?: string
           reminder_time?: string | null
           updated_at?: string
           user_id?: string

@@ -21,6 +21,7 @@ import {
   Package,
   Pencil,
   Plus,
+  Settings,
   Sparkles,
   Target,
   Trash2,
@@ -1263,6 +1264,14 @@ export default function TaskPlanner({
                 title="日历视图"
               >
                 <CalendarDays className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/settings"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
+                aria-label="设置"
+                title="设置"
+              >
+                <Settings className="h-4 w-4" />
               </Link>
               <MuteButton />
               <div className="hidden text-xs text-muted-foreground md:block">{userEmail}</div>
