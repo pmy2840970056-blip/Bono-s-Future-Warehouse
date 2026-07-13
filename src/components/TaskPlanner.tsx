@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -139,6 +139,14 @@ type DragPayload = {
   subGoalTitle: string;
   color: BrickColor;
 };
+
+/* -------------- Quick add context (mobile "+" on leaf tasks) --------------- */
+const QuickAddContext = createContext<((payload: DragPayload) => void) | null>(null);
+function useQuickAdd() {
+  return useContext(QuickAddContext);
+}
+
+
 
 /* -------------- Inline add row ---------------- */
 function InlineAdd({
@@ -290,6 +298,7 @@ function LeafTaskBrick({
           已安排
         </span>
       )}
+      {!completed && !used && <MobileQuickAddButton payload={payload} />}
       {!completed && <TaskAttachments taskId={task.id} userId={userId} compact />}
       <button
         onClick={onDelete}
@@ -299,6 +308,26 @@ function LeafTaskBrick({
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </div>
+  );
+}
+
+function MobileQuickAddButton({ payload }: { payload: DragPayload }) {
+  const quickAdd = useQuickAdd();
+  if (!quickAdd) return null;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        quickAdd(payload);
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 border-ink bg-brick-2 shadow-brick-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-brick-press lg:hidden"
+      aria-label="加入今日待办"
+      title="加入今日待办"
+    >
+      <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+    </button>
   );
 }
 
@@ -946,6 +975,7 @@ export default function TaskPlanner({
   // Collapsed goal ids (default: all expanded). Toggled per-goal, and via bulk buttons.
   const [collapsedGoalIds, setCollapsedGoalIds] = useState<Set<string>>(new Set());
   const [mobileTab, setMobileTab] = useState<"goals" | "today">("goals");
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const toggleGoalCollapsed = (id: string) =>
     setCollapsedGoalIds((prev) => {
@@ -1313,7 +1343,35 @@ export default function TaskPlanner({
           </div>
         </div>
 
-        <main className="mx-auto grid max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <QuickAddContext.Provider
+          value={(payload) => {
+            if (usedIds.has(payload.taskId)) {
+              toast.info("这块已经在今日待办里了");
+              return;
+            }
+            dropEntry.mutate(payload);
+            setMobileTab("today");
+            toast.success("已加入今日待办");
+          }}
+        >
+        <main
+          className="mx-auto grid max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+          onTouchStart={(e) => {
+            const t = e.touches[0];
+            touchStartRef.current = { x: t.clientX, y: t.clientY };
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStartRef.current;
+            touchStartRef.current = null;
+            if (!start) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - start.x;
+            const dy = t.clientY - start.y;
+            if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+            if (dx < 0 && mobileTab === "goals") setMobileTab("today");
+            else if (dx > 0 && mobileTab === "today") setMobileTab("goals");
+          }}
+        >
           <section className={cn(mobileTab === "goals" ? "block" : "hidden", "lg:block")}>
 
             <div className="mb-4 flex items-end justify-between">
@@ -1462,6 +1520,7 @@ export default function TaskPlanner({
 
           </section>
         </main>
+        </QuickAddContext.Provider>
       </div>
 
       <DragOverlay dropAnimation={{ duration: 250, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
