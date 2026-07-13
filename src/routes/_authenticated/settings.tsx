@@ -152,20 +152,6 @@ function SettingsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const saveSettings = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("user_settings")
-        .update({ language, timezone, daily_limit: dailyLimit })
-        .eq("user_id", userId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["settings", userId] });
-      toast.success("设置已保存");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   async function handleSignOut() {
     await qc.cancelQueries();
