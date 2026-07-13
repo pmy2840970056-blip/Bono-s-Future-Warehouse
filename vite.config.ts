@@ -5,11 +5,39 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { Plugin } from "vite";
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const BUILD_ID = String(Date.now());
+
+function emitVersionJson(): Plugin {
+  return {
+    name: "emit-version-json",
+    apply: "build",
+    buildStart() {
+      try {
+        writeFileSync(
+          resolve(process.cwd(), "public/version.json"),
+          JSON.stringify({ version: BUILD_ID }) + "\n",
+        );
+      } catch {
+        // best-effort; harmless if it fails
+      }
+    },
+  };
+}
 
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    plugins: [emitVersionJson()],
+    define: {
+      "import.meta.env.VITE_APP_VERSION": JSON.stringify(BUILD_ID),
+    },
   },
 });
