@@ -279,8 +279,11 @@ function SettingsPage() {
           </Row>
           <div className="flex justify-end">
             <Button
-              onClick={() => saveSettings.mutate()}
-              disabled={saveSettings.isPending}
+              onClick={() => {
+                saveSettings.mutate();
+                saveProfile.mutate();
+              }}
+              disabled={saveSettings.isPending || saveProfile.isPending}
               className="border-2 border-ink bg-brick-2 text-ink shadow-brick-sm hover:shadow-brick"
             >
               保存通用设置
