@@ -1342,7 +1342,35 @@ export default function TaskPlanner({
           </div>
         </div>
 
-        <main className="mx-auto grid max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <QuickAddContext.Provider
+          value={(payload) => {
+            if (usedIds.has(payload.taskId)) {
+              toast.info("这块已经在今日待办里了");
+              return;
+            }
+            dropEntry.mutate(payload);
+            setMobileTab("today");
+            toast.success("已加入今日待办");
+          }}
+        >
+        <main
+          className="mx-auto grid max-w-7xl gap-6 px-3 py-4 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+          onTouchStart={(e) => {
+            const t = e.touches[0];
+            touchStartRef.current = { x: t.clientX, y: t.clientY };
+          }}
+          onTouchEnd={(e) => {
+            const start = touchStartRef.current;
+            touchStartRef.current = null;
+            if (!start) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - start.x;
+            const dy = t.clientY - start.y;
+            if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+            if (dx < 0 && mobileTab === "goals") setMobileTab("today");
+            else if (dx > 0 && mobileTab === "today") setMobileTab("goals");
+          }}
+        >
           <section className={cn(mobileTab === "goals" ? "block" : "hidden", "lg:block")}>
 
             <div className="mb-4 flex items-end justify-between">
