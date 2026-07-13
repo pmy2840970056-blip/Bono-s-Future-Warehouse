@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -139,6 +139,14 @@ type DragPayload = {
   subGoalTitle: string;
   color: BrickColor;
 };
+
+/* -------------- Quick add context (mobile "+" on leaf tasks) --------------- */
+const QuickAddContext = createContext<((payload: DragPayload) => void) | null>(null);
+function useQuickAdd() {
+  return useContext(QuickAddContext);
+}
+
+
 
 /* -------------- Inline add row ---------------- */
 function InlineAdd({
