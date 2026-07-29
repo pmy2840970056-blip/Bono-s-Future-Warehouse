@@ -1,80 +1,64 @@
+## 目标
 
-## 一、手机号 + 短信验证码登录
-
-### 前置：短信通道
-Lovable Cloud 原生支持 Phone Auth，但**发短信本身需要一个 SMS 服务商**（Twilio 是最常用的）。你需要：
-1. 注册 Twilio 账号，买一个可发送国际短信的号码
-2. 我用 `add_secret` 工具向你要 Twilio 的 Account SID、Auth Token、发送号码
-3. 我在后端配置 Supabase Auth 的 Phone Provider 指向 Twilio
-
-如果你想先跳过这一步，我可以先把前端界面做好，后端 SMS 通道等你拿到 Twilio 凭据再接。
-
-### 前端改造
-`src/routes/auth.tsx` 顶部新增一个 Tab 切换：**邮箱 / 手机号**
-- 手机号登录 UI：国家区号选择器（默认 +86）+ 手机号输入 + 「获取验证码」按钮 → 输入 6 位验证码 → 登录
-- 使用 `supabase.auth.signInWithOtp({ phone })` 发验证码，`supabase.auth.verifyOtp({ phone, token, type: "sms" })` 校验
-- 注册流程同样支持手机号，但**仍需邀请码**（复用现有 `handle_new_user` 触发器逻辑，通过 `signInWithOtp` 的 `options.data.invite_code` 传入）
-- 60 秒倒计时防止重复发送
-
-### 数据库
-`handle_new_user` 已通过 `raw_user_meta_data->>'invite_code'` 校验，手机号注册走同一路径无需改。但需要给 `profiles` 兼容手机号用户（原逻辑 `split_part(NEW.email, '@', 1)` 在无 email 时会返回空串）——修补触发器：优先用 meta 里的 `display_name`，否则用手机号后 4 位。
+1. 手机端首次进入时显示新手引导，告诉用户：左右滑动切 Tab；叶子任务上的「+」按钮可以快速加入今日待办；长按任务后向右滑可以拖入今日待办。
+2. 手机端新增**长按 + 右滑**的拖拽交互：在长期目标 Tab 里长按任一叶子任务约 400ms 后，卡片进入"待拖动"高亮态，此时手指向右滑动超过阈值 → 把任务加入今日待办 + toast + 自动切到今日 Tab；松手不达标则取消。
 
 ---
 
-## 二、应用内版本更新提示条
+## 一、新手引导浮层
 
-### 机制
-- 构建时把 `import.meta.env.VITE_APP_VERSION` 注入到前端（`vite.config.ts` 里读 `package.json` 的 version 或 build 时间戳）
-- 新增静态文件 `public/version.json`（构建时由脚本生成，内容 `{ "version": "xxx" }`）
-- 前端启动时读一次当前版本存 memory；每 5 分钟 / 页面重新聚焦时 fetch `/version.json?t=<timestamp>`（bust 缓存），对比不同则显示提示条
-- 提示条 UI：顶部 sticky 横条，`bg-brick-3 border-b-2 border-ink`，文案「发现新版本，点此刷新体验」+ 关闭按钮（本次会话不再提示）
-- 点击刷新：`window.location.reload()`
-
-### 文件
-- 新增 `src/components/UpdateBanner.tsx`
-- 新增 `src/hooks/useVersionCheck.ts`
-- `vite.config.ts` 加一个 build 阶段的 plugin，生成 `public/version.json`
-- 在 `src/routes/__root.tsx` 里挂 `<UpdateBanner />`
+新增组件 `src/components/MobileOnboarding.tsx`：
+- 只在 `useIsMobile()` 为 true 且 `localStorage["brick.onboarded.v1"] !== "1"` 时渲染
+- 半透明遮罩 + 居中卡片，卡片风格沿用现有 `border-2 border-ink bg-paper` 拟物砖块风
+- 内容三条要点（emoji + 短句）：
+  - 👉 左右滑动切换「长期目标 / 今天要做」
+  - ➕ 叶子任务右侧的「+」按钮：一键加入今日
+  - ✊ 长按任务后向右滑：也能拖入今日
+- 底部一个「知道了」按钮，点击写入 localStorage 并关闭
+- 挂在 `TaskPlanner.tsx` 顶层（进入首页即可见），登录页/日历页不显示
 
 ---
 
-## 三、手机端左右滑动 Tab
+## 二、手机端长按 + 右滑拖拽
 
-### 布局
-仅在 **手机端**（`useIsMobile()` 为 true）时启用；桌面端保持现有左右并排布局不变。
+改动集中在 `TaskPlanner.tsx`：
 
-手机端结构：
+### 交互流程
 ```text
-┌──────────────────────────┐
-│ Header（logo/齿轮/日历）    │
-├──────────────────────────┤
-│ [ 目标树 ] [ 今日待办 ]     │ ← Tab 头，当前选中高亮
-├──────────────────────────┤
-│                          │
-│  滑动切换的内容区           │
-│  （左：目标树 / 右：今日）   │
-│                          │
-└──────────────────────────┘
+touchstart  →  启动 400ms 长按计时器 + 轻震动
+              （若期间手指移动 > 8px 或抬起，取消长按）
+长按触发     →  卡片进入 "armed" 态：轻微放大 + 边框加粗 + 阴影
+touchmove   →  实时跟随水平位移做 translateX（最多 120px）
+              超过 80px 阈值时右侧出现 "→ 加入今日" 提示条
+touchend    →  超过阈值：调用现有 addToToday 逻辑 + toast + 切到今日 Tab
+              未过阈值：回弹动画，恢复原状
 ```
 
-### 交互
-- 左右滑动切换（用 `embla-carousel-react`，项目已装 shadcn 的 Carousel 组件，底层就是 embla）
-- Tab 头点击也能切换，与滑动同步
-- **代替拖拽的「加入今日」**：在目标树 Tab 里，任务卡片长按或点击 → 弹出小菜单「➕ 加入今日待办」→ 加入成功后 toast 提示「已加入今日，向右滑查看」
-- 今日待办 Tab 里的完成/删除交互不变（原本就不依赖拖拽）
+### 实现要点
+- 只在 `isMobile` 时启用；桌面端保持 HTML5 DnD 不变
+- 长按期间**阻止** `<main>` 上的水平滑动切 Tab 逻辑（在 armed 状态时，`onTouchMove` 的父级 handler 提前 return），避免和 Tab 手势冲突
+- 复用现有 `createDailyEntry` 乐观更新的 mutation，不新增 API
+- 触觉反馈：`navigator.vibrate?.(15)` 在长按触发与拖入成功时各响一次
+- 卡片本地状态：`armedId`、`dragOffsetX`，卸载时清理计时器
 
-### 实现
-- `TaskPlanner.tsx` 里以 `isMobile` 分叉：手机端渲染新组件 `<MobilePlanner />`，桌面端保持原样
-- 新增 `src/components/MobilePlanner.tsx`：内含 Carousel + 两个 Tab 内容区
-- 复用现有 `GoalsPanel` / `TodayPanel` 组件（如果目前是内联的，抽出成独立组件）
-- 目标树里的任务卡片增加一个「+」小按钮（手机端可见），点击直接调用 `createDailyEntry`
+### 保留现有能力
+- 手机端「+」按钮保留（快速点击派）
+- Tab 头点击 + 空白区域左右滑动切 Tab 依旧生效（只有在 armed 态的卡片会拦截）
 
 ---
 
-## 四、需要你确认
+## 三、文件清单
 
-1. **手机号短信通道**：现在就要接 Twilio（需要你去注册并给我凭据），还是先把前端做好、SMS 后端后面再接？
-2. **发短信费用**：Twilio 发到中国大陆的短信约 0.05-0.08 美元/条，注册时你需要给账号充值，这个 OK 吗？
-3. **手机端目标树里的 +**：只有一个 emoji「+」按钮就够，还是要更明显（比如带背景色的圆形按钮）？
+- 新增：`src/components/MobileOnboarding.tsx`
+- 修改：`src/components/TaskPlanner.tsx`
+  - 挂载 `<MobileOnboarding />`
+  - `LeafTaskBrick` 增加 touch 手势 props（长按 + 位移）
+  - `<main>` 的 swipe handler 在 armed 期间让位
 
-三点确认后我就开工。
+---
+
+## 需要你确认
+
+1. 新手引导的关闭策略：**只显示一次**（默认方案，写 localStorage），还是"每次新版本再弹一次"？
+2. 长按时长 **400ms** 是否合适？（太短容易误触发，太长手感迟钝）
+3. 是否需要"设置里可以重置新手引导"入口，方便你演示给朋友看？
