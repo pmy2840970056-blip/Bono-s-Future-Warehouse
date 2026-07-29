@@ -1346,7 +1346,8 @@ export default function TaskPlanner({
       }}
     >
       <div className="min-h-screen">
-        <header className="border-b-2 border-ink bg-card">
+        <MobileOnboarding />
+
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6 sm:py-4">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm sm:h-10 sm:w-10">
