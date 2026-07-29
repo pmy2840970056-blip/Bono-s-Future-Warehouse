@@ -250,21 +250,90 @@ function LeafTaskBrick({
     disabled: used || completed,
   });
 
+  const isMobile = useIsMobile();
+  const quickAdd = useQuickAdd();
+  const touchDragEnabled = isMobile && !used && !completed && !!quickAdd;
+  const [armed, setArmed] = useState(false);
+  const [dx, setDx] = useState(0);
+  const timerRef = useRef<number | null>(null);
+  const startRef = useRef<{ x: number; y: number } | null>(null);
+
+  const clearLongPress = () => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+  useEffect(() => () => clearLongPress(), []);
+
+  const reachedThreshold = dx > 80;
+
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "group relative flex items-center gap-2 rounded-lg border-2 border-ink px-3 py-2.5 transition-all select-none",
+        "group relative flex items-center gap-2 rounded-lg border-2 border-ink px-3 py-2.5 select-none",
         "before:absolute before:left-0 before:top-0 before:h-full before:w-1.5 before:rounded-l-md",
         colorRing[goal.color],
         completed
           ? "bg-muted/60 shadow-none opacity-60 before:opacity-30 grayscale"
           : "bg-card shadow-brick-sm",
         !completed && used && "opacity-40",
-        !completed && !used && "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
+        !completed && !used && !armed && "hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-brick",
         isDragging && "opacity-30",
         justDone && "animate-brick-drop",
+        armed ? "z-10 scale-[1.02] shadow-brick ring-2 ring-ink" : "transition-all",
       )}
+      style={{
+        transform: armed && dx > 0 ? `translateX(${dx}px)` : undefined,
+        touchAction: armed ? "none" : undefined,
+      }}
+      onTouchStart={(e) => {
+        if (!touchDragEnabled) return;
+        const t = e.touches[0];
+        startRef.current = { x: t.clientX, y: t.clientY };
+        clearLongPress();
+        timerRef.current = window.setTimeout(() => {
+          setArmed(true);
+          navigator.vibrate?.(15);
+        }, 400);
+      }}
+      onTouchMove={(e) => {
+        const start = startRef.current;
+        if (!start) return;
+        const t = e.touches[0];
+        const mx = t.clientX - start.x;
+        const my = t.clientY - start.y;
+        if (!armed) {
+          if (Math.abs(mx) > 8 || Math.abs(my) > 8) {
+            clearLongPress();
+            startRef.current = null;
+          }
+          return;
+        }
+        e.stopPropagation();
+        setDx(Math.max(0, Math.min(140, mx)));
+      }}
+      onTouchEnd={(e) => {
+        clearLongPress();
+        const wasArmed = armed;
+        const finalDx = dx;
+        startRef.current = null;
+        setArmed(false);
+        setDx(0);
+        if (!wasArmed) return;
+        e.stopPropagation();
+        if (finalDx > 80) {
+          navigator.vibrate?.(15);
+          quickAdd?.(payload);
+        }
+      }}
+      onTouchCancel={() => {
+        clearLongPress();
+        startRef.current = null;
+        setArmed(false);
+        setDx(0);
+      }}
     >
       <div
         {...attributes}
@@ -310,9 +379,20 @@ function LeafTaskBrick({
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
+      {armed && (
+        <span
+          className={cn(
+            "pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-md border-2 border-ink px-2 py-0.5 text-[11px] font-bold shadow-brick-sm transition-colors",
+            reachedThreshold ? "bg-brick-2" : "bg-card text-muted-foreground",
+          )}
+        >
+          {reachedThreshold ? "松手加入今日 →" : "继续右滑 →"}
+        </span>
+      )}
     </div>
   );
 }
+
 
 function MobileQuickAddButton({ payload }: { payload: DragPayload }) {
   const quickAdd = useQuickAdd();
