@@ -70,6 +70,9 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
+import MobileOnboarding from "@/components/MobileOnboarding";
+
 
 const colorClass: Record<BrickColor, string> = {
   "brick-1": "bg-brick-1",
