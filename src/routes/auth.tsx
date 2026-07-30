@@ -424,7 +424,7 @@ function AuthPage() {
                 {mode === "signin" ? "登录" : "创建账号"}
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                提示：短信服务由后台配置，若发送失败请稍后再试或改用邮箱登录。
+                我们正在接入短信服务，开通后手机号即可直接收验证码登录。
               </p>
             </form>
           )}
