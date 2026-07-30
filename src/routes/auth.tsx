@@ -336,6 +336,9 @@ function AuthPage() {
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-3">
+              <div className="rounded-md border-2 border-ink bg-brick-3/40 px-3 py-2 text-[11px] font-bold">
+                短信验证码登录暂未开放，请先使用「邮箱」或 Google 登录。
+              </div>
               {mode === "signup" && (
                 <div>
                   <Label htmlFor="pname">显示名（可选）</Label>
