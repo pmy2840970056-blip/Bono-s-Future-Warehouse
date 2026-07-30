@@ -115,6 +115,13 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        const { data: sess } = await supabase.auth.getSession();
+        if (!sess.session) {
+          toast.success("注册成功！请前往邮箱点击验证链接后再登录");
+          setMode("signin");
+          setLoading(false);
+          return;
+        }
         toast.success("注册成功！正在进入…");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
