@@ -27,12 +27,21 @@ export const Route = createFileRoute("/auth")({
 });
 
 function friendlyInviteError(msg: string): string {
+  const m = msg.toLowerCase();
   if (msg.includes("INVITE_CODE_REQUIRED")) return "请填写邀请码";
   if (msg.includes("INVITE_CODE_INVALID")) return "邀请码无效，请联系邀请你的人";
   if (msg.includes("INVITE_CODE_EXPIRED")) return "邀请码已过期";
-  if (msg.includes("INVITE_CODE_EXHAUSTED")) return "邀请码已被用完";
-  if (msg.toLowerCase().includes("sms") || msg.toLowerCase().includes("phone provider"))
-    return "短信服务暂未开通，请稍后再试或使用邮箱登录";
+  if (msg.includes("INVITE_CODE_EXHAUSTED")) return "邀请码已被用完（每个码限一人使用）";
+  if (m.includes("sms") || m.includes("phone provider") || m.includes("phone_provider"))
+    return "短信登录暂未开放，请使用邮箱或 Google 登录";
+  if (m.includes("weak") || m.includes("pwned"))
+    return "这个密码太常见了，请换一个更复杂的密码（建议大小写+数字+符号，8 位以上）";
+  if (m.includes("invalid login credentials")) return "邮箱或密码不正确";
+  if (m.includes("already registered") || m.includes("already been registered"))
+    return "该邮箱已注册，请直接登录";
+  if (m.includes("password should be at least")) return "密码至少需要 6 位";
+  if (m.includes("email address") && m.includes("invalid")) return "邮箱格式不正确";
+  if (m.includes("rate limit") || m.includes("too many")) return "操作过于频繁，请稍后再试";
   return msg;
 }
 
