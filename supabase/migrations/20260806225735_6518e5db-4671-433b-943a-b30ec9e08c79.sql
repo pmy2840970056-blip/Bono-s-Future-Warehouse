@@ -1,0 +1,1 @@
+DELETE FROM public.daily_entries WHERE entry_date = '2026-08-06';

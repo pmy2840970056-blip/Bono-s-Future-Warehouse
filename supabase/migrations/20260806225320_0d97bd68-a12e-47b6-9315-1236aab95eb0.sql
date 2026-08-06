@@ -1,0 +1,1 @@
+DELETE FROM public.daily_entries WHERE id = 'ef3d114a-8a72-4ba9-8ca6-d704d412ac74';

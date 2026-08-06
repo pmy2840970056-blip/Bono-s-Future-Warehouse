@@ -8,6 +8,36 @@
 
 ---
 
+## 🎬 演示动画
+
+从长期目标里拖一块任务到「今天要做」，勾掉它，它就滑进已完成区：
+
+![拖拽到今日待办并完成任务的演示动画](https://dream-path-maker-77.lovable.app/__l5e/assets-v1/3033866b-077d-45b6-a752-e6be2e22d434/demo.gif)
+
+## 🖼️ 界面截图
+
+**桌面端主界面**：左侧长期目标树，右侧今日待办
+
+![桌面端双栏主界面截图](https://dream-path-maker-77.lovable.app/__l5e/assets-v1/799699e0-6edb-4991-99b2-00496c23c377/desktop.png)
+
+**日历视图**：日 / 周 / 月三种视角回看积木
+
+![日历月视图截图](https://dream-path-maker-77.lovable.app/__l5e/assets-v1/59c448dc-8673-482c-8e14-9a3e3eef5137/calendar.png)
+
+**设置页**：账号、语言、时区、每日任务上限
+
+![设置页截图](https://dream-path-maker-77.lovable.app/__l5e/assets-v1/38030437-814d-40bc-b0ce-5800164f4428/settings.png)
+
+**移动端（PWA）**：Tab 切换 + 长按右滑加入今日
+
+<p>
+  <img src="https://dream-path-maker-77.lovable.app/__l5e/assets-v1/ad8c97e5-9440-4799-a023-4c4a7c699da8/mobile-goals.png" alt="手机端长期目标列表截图" width="300" />
+  <img src="https://dream-path-maker-77.lovable.app/__l5e/assets-v1/5e5b251a-d6d6-43ba-b16c-c5c9c0942278/mobile-today.png" alt="手机端今日待办截图" width="300" />
+</p>
+
+---
+
+
 ## ✨ 功能概览
 
 **目标与任务**
