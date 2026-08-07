@@ -97,6 +97,33 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_applications: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          id: string
+          ip_hash: string | null
+          purpose: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          id?: string
+          ip_hash?: string | null
+          purpose: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          id?: string
+          ip_hash?: string | null
+          purpose?: string
+        }
+        Relationships: []
+      }
       invite_codes: {
         Row: {
           active: boolean
@@ -333,7 +360,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_invite_code: {
+        Args: { _email: string; _ip_hash?: string; _purpose: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
