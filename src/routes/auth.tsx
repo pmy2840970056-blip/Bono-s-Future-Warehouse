@@ -323,7 +323,12 @@ function AuthPage() {
                     className="border-2 border-ink font-mono tracking-wider"
                     autoCapitalize="characters"
                   />
-                  <p className="mt-1 text-[11px] text-muted-foreground">内测阶段仅限受邀用户注册。</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    内测阶段仅限受邀用户注册。没有邀请码？
+                    <Link to="/invite" className="font-bold underline">
+                      申请一个
+                    </Link>
+                  </p>
                 </div>
               )}
               <Button

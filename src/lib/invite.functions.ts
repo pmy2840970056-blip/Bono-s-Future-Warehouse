@@ -61,7 +61,7 @@ export const applyForInvite = createServerFn({ method: "POST" })
     const { data: code, error } = await supabaseAdmin.rpc("claim_invite_code", {
       _email: data.email,
       _purpose: data.purpose,
-      _ip_hash: ipHash,
+      ...(ipHash ? { _ip_hash: ipHash } : {}),
     });
     if (error) throw error;
     if (!code) return { status: "sold_out" };
