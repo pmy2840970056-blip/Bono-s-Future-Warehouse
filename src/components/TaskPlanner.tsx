@@ -550,7 +550,7 @@ function SubGoalBlock({
         </button>
         <button
           onClick={() => {
-            if (confirm(`删除子目标「${sub.title}」及其下所有任务？`)) delSub.mutate();
+            if (confirm(t("删除子目标「{title}」及其下所有任务？", { title: sub.title }))) delSub.mutate();
           }}
           className="opacity-30 hover:opacity-100"
         >
@@ -789,7 +789,7 @@ function GoalBlock({
         </button>
         <button
           onClick={() => {
-            if (confirm(`删除目标「${goal.title}」及其下所有内容？`)) delGoal.mutate();
+            if (confirm(t("删除目标「{title}」及其下所有内容？", { title: goal.title }))) delGoal.mutate();
           }}
           className="opacity-30 hover:opacity-100"
           aria-label={t("删除目标")}
@@ -829,6 +829,7 @@ function PriorityPicker({
   disabled?: boolean;
   onChange: (p: Priority) => void;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const meta = PRIORITY_META[value];
   return (
@@ -845,8 +846,8 @@ function PriorityPicker({
             meta.chip,
             disabled && "opacity-60 cursor-not-allowed",
           )}
-          aria-label={`设置优先级：当前${t(meta.label)}`}
-          title={`优先级：${meta.label}`}
+          aria-label={t("设置优先级：当前{priority}", { priority: t(meta.label) })}
+          title={t("优先级：{priority}", { priority: t(meta.label) })}
         >
           <span className={cn("h-2 w-2 rounded-full border border-ink/60", meta.dot)} />
           {t(meta.short)}
@@ -1544,7 +1545,7 @@ export default function TaskPlanner({
               <div>
                 <h2 className="text-xl font-black sm:text-2xl">{t("今天要做")}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {activeCount} {t("块待办 ·")}{doneCount} {t("块已消除")}</p>
+                  {t("{active} 块待办 · {done} 块已消除", { active: activeCount, done: doneCount })}</p>
               </div>
               {activeCount > 0 && (
                 <span className="rounded-md border-2 border-ink bg-brick-2 px-2 py-1 text-xs font-bold shadow-brick-sm">
@@ -1577,7 +1578,7 @@ export default function TaskPlanner({
                     </div>
                     <button
                       onClick={() => {
-                        if (confirm(`清空 ${doneCount} 块已完成的任务？`)) {
+                        if (confirm(t("清空 {count} 块已完成的任务？", { count: doneCount }))) {
                           clearDone.mutate(doneDaily.map((d) => d.id));
                         }
                       }}

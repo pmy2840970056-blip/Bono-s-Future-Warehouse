@@ -30,6 +30,8 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { name: "description", content: DESC },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -245,8 +247,6 @@ function SettingsPage() {
                 { value: "en", label: "English" },
               ]}
             />
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {t("目前主界面仍以中文显示，完整英文界面陆续上线。")}</p>
           </Row>
           <Row label={t("时区 / 地区")}>
             <select

@@ -265,11 +265,11 @@ export function AiGoalDialog({
                     </button>
                   </div>
                   <div className="ml-8 space-y-1.5">
-                    {s.tasks.map((t, ti) => (
+                    {s.tasks.map((taskTitle, ti) => (
                       <div key={ti} className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold text-muted-foreground w-4">·</span>
                         <Input
-                          value={t}
+                          value={taskTitle}
                           onChange={(e) => updateTask(si, ti, e.target.value)}
                           className="h-7 border-2 border-ink text-sm"
                         />

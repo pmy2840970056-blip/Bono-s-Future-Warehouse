@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/")({
       { property: "og:title", content: HOME_TITLE },
       { property: "og:description", content: HOME_DESC },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://dream-path-maker-77.lovable.app/" },
     ],
     links: [{ rel: "canonical", href: "https://dream-path-maker-77.lovable.app/" }],

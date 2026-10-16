@@ -37,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/calendar")({
       { property: "og:title", content: CAL_TITLE },
       { property: "og:description", content: CAL_DESC },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -216,6 +217,7 @@ function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode
 }
 
 function EntryChip({ e, compact }: { e: DatedEntry; compact?: boolean }) {
+  const { t } = useLanguage();
   return (
     <div
       className={cn(
@@ -253,7 +255,7 @@ function DayView({ date, entries, loading }: { date: Date; entries: DatedEntry[]
         <div>
           <div className="text-sm font-bold">{format(date, "EEEE", { locale: language === "en" ? enUS : zhCN })}</div>
           <div className="text-xs text-muted-foreground">
-            {loading ? t("加载中…") : `${active.length} 块待办 · ${done.length} 块已消除`}
+            {loading ? t("加载中…") : t("{active} 块待办 · {done} 块已消除", { active: active.length, done: done.length })}
           </div>
         </div>
       </div>
@@ -289,7 +291,7 @@ function DayEntryRow({ e }: { e: DatedEntry }) {
     >
       <span
         role="img"
-        aria-label={priorityLabel[e.priority]}
+        aria-label={t(priorityLabel[e.priority])}
         className={cn("absolute left-0 top-0 h-full w-1.5 border-r-2 border-ink", priorityDot[e.priority])}
       />
       <div className="flex-1 min-w-0">
@@ -391,7 +393,7 @@ function MonthView({
   const { t, language, locale } = useLanguage();
   const days: Date[] = [];
   for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
-  const weekHeaders = [t("一"), t("二"), t("三"), t("四"), t("五"), t("六"), t("日")];
+  const weekHeaders = language === "en" ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["一", "二", "三", "四", "五", "六", "日"];
   return (
     <div className="overflow-hidden rounded-xl border-2 border-ink bg-card shadow-brick">
       <div className="grid grid-cols-7 border-b-2 border-ink bg-background">

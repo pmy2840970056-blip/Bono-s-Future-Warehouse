@@ -22,6 +22,7 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: AUTH_TITLE },
       { property: "og:description", content: AUTH_DESC },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),
