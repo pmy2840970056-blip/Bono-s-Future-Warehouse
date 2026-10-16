@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -37,6 +38,7 @@ export function TaskAttachments({
   userId: string;
   compact?: boolean;
 }) {
+  const { t, language, locale } = useLanguage();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -60,19 +62,19 @@ export function TaskAttachments({
       setUrl("");
       invalidate();
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "添加链接失败"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("添加链接失败")),
   });
 
   const upload = useMutation({
     mutationFn: (f: File) => uploadFileAttachment(userId, taskId, f),
     onSuccess: () => invalidate(),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "上传失败"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("上传失败")),
   });
 
   const del = useMutation({
     mutationFn: (a: TaskAttachment) => deleteAttachment(a),
     onSuccess: () => invalidate(),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "删除失败"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("删除失败")),
   });
 
   async function openAttachment(a: TaskAttachment) {
@@ -81,7 +83,7 @@ export function TaskAttachments({
       if (!target && a.storage_path) target = await getSignedUrl(a.storage_path);
       if (target) window.open(target, "_blank", "noopener,noreferrer");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "打开失败");
+      toast.error(e instanceof Error ? e.message : t("打开失败"));
     }
   }
 
@@ -101,8 +103,8 @@ export function TaskAttachments({
             compact ? "h-6 w-6" : "h-7 w-7",
             count > 0 && "bg-accent",
           )}
-          aria-label="附件"
-          title="添加链接/图片/文件"
+          aria-label={t("附件")}
+          title={t("添加链接/图片/文件")}
         >
           <Paperclip className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} strokeWidth={2.5} />
           {count > 0 && (
@@ -120,19 +122,17 @@ export function TaskAttachments({
       >
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            任务附件
-          </p>
-          <span className="text-[10px] text-muted-foreground">最多 10MB / 文件</span>
+            {t("任务附件")}</p>
+          <span className="text-[10px] text-muted-foreground">{t("最多 10MB / 文件")}</span>
         </div>
 
         <div className="mb-3 max-h-60 space-y-1.5 overflow-y-auto pr-1">
           {q.isLoading && (
-            <p className="py-3 text-center text-xs text-muted-foreground">加载中…</p>
+            <p className="py-3 text-center text-xs text-muted-foreground">{t("加载中…")}</p>
           )}
           {!q.isLoading && list.length === 0 && (
             <p className="py-3 text-center text-xs text-muted-foreground">
-              还没有附件。加个链接或文件，动手时就不用再翻半天。
-            </p>
+              {t("还没有附件。加个链接或文件，动手时就不用再翻半天。")}</p>
           )}
           {list.map((a) => {
             const Icon =
@@ -153,7 +153,7 @@ export function TaskAttachments({
                 <button
                   onClick={() => del.mutate(a)}
                   className="opacity-30 hover:opacity-100"
-                  aria-label="删除附件"
+                  aria-label={t("删除附件")}
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -174,7 +174,7 @@ export function TaskAttachments({
           <Input
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="粘贴链接 (Notion / Figma / 文档 …)"
+            placeholder={t("粘贴链接 (Notion / Figma / 文档 …)")}
             className="h-8 border-2 border-ink text-xs"
           />
           <Button
@@ -183,7 +183,7 @@ export function TaskAttachments({
             disabled={!url.trim() || addLink.isPending}
             className="h-8 border-2 border-ink bg-brick-3 text-xs font-bold shadow-brick-sm"
           >
-            {addLink.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "加"}
+            {addLink.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("加")}
           </Button>
         </form>
 
@@ -206,12 +206,10 @@ export function TaskAttachments({
         >
           {upload.isPending ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> 上传中…
-            </>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("上传中…")}</>
           ) : (
             <>
-              <Upload className="h-3.5 w-3.5" strokeWidth={2.5} /> 上传图片或文件
-            </>
+              <Upload className="h-3.5 w-3.5" strokeWidth={2.5} /> {t("上传图片或文件")}</>
           )}
         </Button>
       </PopoverContent>

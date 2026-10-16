@@ -1,3 +1,5 @@
+import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { useLanguage } from "@/lib/i18n";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
@@ -113,6 +115,7 @@ const colorRing: Record<BrickColor, string> = {
 const CYCLE: BrickColor[] = ["brick-1", "brick-2", "brick-3", "brick-4"];
 
 function MuteButton() {
+  const { t, language, locale } = useLanguage();
   const [muted, setMutedState] = useState(false);
   useEffect(() => {
     setMutedState(isMuted());
@@ -127,8 +130,8 @@ function MuteButton() {
         if (!next) sfxClick();
       }}
       className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-      aria-label={muted ? "开启音效" : "关闭音效"}
-      title={muted ? "开启音效" : "关闭音效"}
+      aria-label={muted ? t("开启音效") : t("关闭音效")}
+      title={muted ? t("开启音效") : t("关闭音效")}
     >
       {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
     </button>
@@ -234,6 +237,7 @@ function LeafTaskBrick({
   userId: string;
   onDelete: () => void;
 }) {
+  const { t, language, locale } = useLanguage();
   const completed = completedIds.has(task.id);
   const used = usedIds.has(task.id);
   const justDone = justCompletedIds.has(task.id);
@@ -349,7 +353,7 @@ function LeafTaskBrick({
               "ml-1 grid h-4 w-4 shrink-0 place-items-center rounded-sm border border-ink/60 bg-done text-ink",
               justDone && "animate-brick-shake",
             )}
-            aria-label="已完成"
+            aria-label={t("已完成")}
           >
             <Check className="h-3 w-3" strokeWidth={4} />
           </span>
@@ -367,15 +371,14 @@ function LeafTaskBrick({
       </div>
       {!completed && used && (
         <span className="shrink-0 rounded border border-ink bg-done px-1.5 py-0.5 text-[10px] font-bold uppercase">
-          已安排
-        </span>
+          {t("已安排")}</span>
       )}
       {!completed && !used && <MobileQuickAddButton payload={payload} />}
       {!completed && <TaskAttachments taskId={task.id} userId={userId} compact />}
       <button
         onClick={onDelete}
         className="opacity-0 group-hover:opacity-60 hover:opacity-100 transition"
-        aria-label="删除任务"
+        aria-label={t("删除任务")}
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -386,7 +389,7 @@ function LeafTaskBrick({
             reachedThreshold ? "bg-brick-2" : "bg-card text-muted-foreground",
           )}
         >
-          {reachedThreshold ? "松手加入今日 →" : "继续右滑 →"}
+          {reachedThreshold ? t("松手加入今日 →") : t("继续右滑 →")}
         </span>
       )}
     </div>
@@ -395,6 +398,7 @@ function LeafTaskBrick({
 
 
 function MobileQuickAddButton({ payload }: { payload: DragPayload }) {
+  const { t, language, locale } = useLanguage();
   const quickAdd = useQuickAdd();
   if (!quickAdd) return null;
   return (
@@ -406,8 +410,8 @@ function MobileQuickAddButton({ payload }: { payload: DragPayload }) {
       }}
       onPointerDown={(e) => e.stopPropagation()}
       className="grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 border-ink bg-brick-2 shadow-brick-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-brick-press lg:hidden"
-      aria-label="加入今日待办"
-      title="加入今日待办"
+      aria-label={t("加入今日待办")}
+      title={t("加入今日待办")}
     >
       <Plus className="h-3.5 w-3.5" strokeWidth={3} />
     </button>
@@ -430,6 +434,7 @@ function SubGoalBlock({
   justCompletedIds: Set<string>;
   userId: string;
 }) {
+  const { t, language, locale } = useLanguage();
   const [open, setOpen] = useState(true);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const activeTasks = useMemo(() => sub.tasks.filter((t) => !completedIds.has(t.id)), [sub.tasks, completedIds]);
@@ -477,7 +482,7 @@ function SubGoalBlock({
     },
     onError: (e, _title, ctx) => {
       if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
-      toast.error(e instanceof Error ? e.message : "添加失败");
+      toast.error(e instanceof Error ? e.message : t("添加失败"));
     },
   });
   const delTask = useMutation({
@@ -540,8 +545,7 @@ function SubGoalBlock({
           </span>
           {allDone && (
             <span className="ml-1 rounded border border-ink bg-done px-1 py-px text-[9px] font-bold">
-              全部完成
-            </span>
+              {t("全部完成")}</span>
           )}
         </button>
         <button
@@ -568,7 +572,7 @@ function SubGoalBlock({
               onDelete={() => delTask.mutate(t.id)}
             />
           ))}
-          <InlineAdd placeholder="添加任务" small onAdd={(v) => addTask.mutateAsync(v)} />
+          <InlineAdd placeholder={t("添加任务")} small onAdd={(v) => addTask.mutateAsync(v)} />
 
           {archivedTasks.length > 0 && (
             <div className="mt-2 rounded-md border-2 border-dashed border-ink/25 bg-muted/30 p-2">
@@ -582,8 +586,7 @@ function SubGoalBlock({
                   <ChevronRight className="h-3 w-3" />
                 )}
                 <Package className="h-3 w-3" />
-                已完成收纳箱
-                <span className="opacity-70">({archivedTasks.length})</span>
+                {t("已完成收纳箱")}<span className="opacity-70">({archivedTasks.length})</span>
               </button>
               {archiveOpen && (
                 <div className="mt-2 space-y-2">
@@ -627,6 +630,7 @@ function GoalBlock({
   open: boolean;
   onToggle: () => void;
 }) {
+  const { t, language, locale } = useLanguage();
   
   const qc = useQueryClient();
   const total = goal.subgoals.reduce((n, s) => n + s.tasks.length, 0);
@@ -699,7 +703,7 @@ function GoalBlock({
     },
     onError: (e, _title, ctx) => {
       if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
-      toast.error(e instanceof Error ? e.message : "重命名失败");
+      toast.error(e instanceof Error ? e.message : t("重命名失败"));
     },
   });
 
@@ -758,7 +762,7 @@ function GoalBlock({
                   setEditVal(goal.title);
                   setEditing(true);
                 }}
-                title="双击重命名"
+                title={t("双击重命名")}
               >
                 {goal.title}
               </h3>
@@ -778,8 +782,8 @@ function GoalBlock({
             setEditing(true);
           }}
           className="opacity-30 hover:opacity-100"
-          aria-label="重命名目标"
-          title="重命名"
+          aria-label={t("重命名目标")}
+          title={t("重命名")}
         >
           <Pencil className="h-4 w-4" />
         </button>
@@ -788,7 +792,7 @@ function GoalBlock({
             if (confirm(`删除目标「${goal.title}」及其下所有内容？`)) delGoal.mutate();
           }}
           className="opacity-30 hover:opacity-100"
-          aria-label="删除目标"
+          aria-label={t("删除目标")}
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -807,7 +811,7 @@ function GoalBlock({
             />
           ))}
           <div className="ml-3 pl-4">
-            <InlineAdd placeholder="添加子目标" onAdd={(v) => addSub.mutateAsync(v)} />
+            <InlineAdd placeholder={t("添加子目标")} onAdd={(v) => addSub.mutateAsync(v)} />
           </div>
         </div>
       )}
@@ -841,11 +845,11 @@ function PriorityPicker({
             meta.chip,
             disabled && "opacity-60 cursor-not-allowed",
           )}
-          aria-label={`设置优先级：当前${meta.label}`}
+          aria-label={`设置优先级：当前${t(meta.label)}`}
           title={`优先级：${meta.label}`}
         >
           <span className={cn("h-2 w-2 rounded-full border border-ink/60", meta.dot)} />
-          {meta.short}
+          {t(meta.short)}
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -876,7 +880,7 @@ function PriorityPicker({
                 )}
               >
                 <span className={cn("h-3 w-3 rounded-full border border-ink/60", m.dot)} />
-                {m.label}
+                {t(m.label)}
                 {p === value && <span className="ml-auto text-xs opacity-70">✓</span>}
               </button>
             );
@@ -901,6 +905,7 @@ function DailyBrick({
   onSetPriority: (id: string, p: Priority) => void;
   animating: boolean;
 }) {
+  const { t, language, locale } = useLanguage();
   const pmeta = PRIORITY_META[task.priority];
   return (
     <div
@@ -933,8 +938,8 @@ function DailyBrick({
             "shadow-brick-sm hover:shadow-brick-press hover:translate-x-0.5 hover:translate-y-0.5",
             task.done ? colorClass[task.color] : "bg-background",
           )}
-          aria-label={task.done ? "取消完成" : "完成"}
-          title={task.done ? "点一下取消完成，放回今日待办" : "完成"}
+          aria-label={task.done ? t("取消完成") : t("完成")}
+          title={task.done ? t("点一下取消完成，放回今日待办") : t("完成")}
         >
           {task.done && (
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="4">
@@ -974,6 +979,7 @@ function DailyBrick({
 }
 
 function DropZone({ hasTasks }: { hasTasks: boolean }) {
+  const { t, language, locale } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: "daily-drop" });
   return (
     <div
@@ -993,10 +999,9 @@ function DropZone({ hasTasks }: { hasTasks: boolean }) {
       >
         <Plus className="h-6 w-6" strokeWidth={3} />
       </div>
-      <p className="text-sm font-bold">{isOver ? "松手放下！" : "从左边拖一块任务过来"}</p>
+      <p className="text-sm font-bold">{isOver ? t("松手放下！") : t("从左边拖一块任务过来")}</p>
       <p className="mt-1 max-w-[28ch] text-xs text-muted-foreground">
-        不知道今天做什么？拖一块过来，看着它，就想起来为什么要做了。
-      </p>
+        {t("不知道今天做什么？拖一块过来，看着它，就想起来为什么要做了。")}</p>
     </div>
   );
 }
@@ -1009,6 +1014,7 @@ export default function TaskPlanner({
   initialUserId?: string;
   initialUserEmail?: string;
 }) {
+  const { t, language, locale } = useLanguage();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(initialUserId ?? null);
@@ -1168,7 +1174,7 @@ export default function TaskPlanner({
     },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["goals", userId], ctx.prev);
-      toast.error(e instanceof Error ? e.message : "创建失败");
+      toast.error(e instanceof Error ? e.message : t("创建失败"));
     },
   });
 
@@ -1216,7 +1222,7 @@ export default function TaskPlanner({
     },
     onError: (e, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["daily", userId], ctx.prev);
-      toast.error(e instanceof Error ? e.message : "拖入失败");
+      toast.error(e instanceof Error ? e.message : t("拖入失败"));
     },
   });
 
@@ -1305,9 +1311,9 @@ export default function TaskPlanner({
     onSuccess: () => {
       sfxCheer();
       qc.invalidateQueries({ queryKey: ["goals", userId] });
-      toast.success("已载入示例目标");
+      toast.success(t("已载入示例目标"));
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "载入失败"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("载入失败")),
   });
 
 
@@ -1330,7 +1336,7 @@ export default function TaskPlanner({
     navigate({ to: "/auth", replace: true });
   }
 
-  const today = new Date().toLocaleDateString("zh-CN", {
+  const today = new Date().toLocaleDateString(locale, {
     month: "long",
     day: "numeric",
     weekday: "long",
@@ -1355,8 +1361,8 @@ export default function TaskPlanner({
                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.5} />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate text-base font-black tracking-tight sm:text-xl">积木清单</h1>
-                <p className="hidden text-xs text-muted-foreground sm:block">把长期目标拆成今天能做的一块</p>
+                <h1 className="truncate text-base font-black tracking-tight sm:text-xl">{t("积木清单")}</h1>
+                <p className="hidden text-xs text-muted-foreground sm:block">{t("把长期目标拆成今天能做的一块")}</p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -1366,36 +1372,37 @@ export default function TaskPlanner({
               <button
                 onClick={() => setAiOpen(true)}
                 disabled={!userId}
-                aria-label="AI 拆解"
+                aria-label={t("AI 拆解")}
                 className="flex items-center gap-1.5 rounded-md border-2 border-ink bg-brick-3 px-2 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick disabled:opacity-50 sm:px-3"
               >
                 <Wand2 className="h-3.5 w-3.5" strokeWidth={2.5} />
-                <span className="hidden sm:inline">AI 拆解</span>
+                <span className="hidden sm:inline">{t("AI 拆解")}</span>
               </button>
               <Link
                 to="/calendar"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-                aria-label="日历视图"
-                title="日历视图"
+                aria-label={t("日历视图")}
+                title={t("日历视图")}
               >
                 <CalendarDays className="h-4 w-4" />
               </Link>
               <Link
                 to="/settings"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-                aria-label="设置"
-                title="设置"
+                aria-label={t("设置")}
+                title={t("设置")}
               >
                 <Settings className="h-4 w-4" />
               </Link>
+              <LanguageSwitch />
               <MuteButton />
               <div className="hidden text-xs text-muted-foreground md:block">{userEmail}</div>
 
               <button
                 onClick={handleSignOut}
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-                aria-label="退出登录"
-                title="退出登录"
+                aria-label={t("退出登录")}
+                title={t("退出登录")}
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -1414,7 +1421,7 @@ export default function TaskPlanner({
                 mobileTab === "goals" ? "bg-brick-1" : "bg-card text-muted-foreground",
               )}
             >
-              长期目标 <span className="ml-1 opacity-70">({goals.length})</span>
+              {t("长期目标")}<span className="ml-1 opacity-70">({goals.length})</span>
             </button>
             <button
               onClick={() => setMobileTab("today")}
@@ -1423,7 +1430,7 @@ export default function TaskPlanner({
                 mobileTab === "today" ? "bg-brick-2" : "bg-card text-muted-foreground",
               )}
             >
-              今天要做 <span className="ml-1 opacity-70">({activeCount})</span>
+              {t("今天要做")}<span className="ml-1 opacity-70">({activeCount})</span>
             </button>
           </div>
         </div>
@@ -1431,12 +1438,12 @@ export default function TaskPlanner({
         <QuickAddContext.Provider
           value={(payload) => {
             if (usedIds.has(payload.taskId)) {
-              toast.info("这块已经在今日待办里了");
+              toast.info(t("这块已经在今日待办里了"));
               return;
             }
             dropEntry.mutate(payload);
             setMobileTab("today");
-            toast.success("已加入今日待办");
+            toast.success(t("已加入今日待办"));
           }}
         >
         <main
@@ -1461,59 +1468,54 @@ export default function TaskPlanner({
 
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-xl font-black sm:text-2xl">长期目标</h2>
-                <p className="text-sm text-muted-foreground">拆到能立刻动手的那一块</p>
+                <h2 className="text-xl font-black sm:text-2xl">{t("长期目标")}</h2>
+                <p className="text-sm text-muted-foreground">{t("拆到能立刻动手的那一块")}</p>
               </div>
               <div className="flex items-center gap-2">
                 {goals.length > 0 && (
                   <button
                     onClick={collapseAllGoals}
                     className="flex items-center gap-1 rounded-md border-2 border-ink bg-background px-2 py-1 text-xs font-bold shadow-brick-sm hover:bg-accent"
-                    aria-label={allCollapsed ? "全部展开" : "全部收起"}
-                    title={allCollapsed ? "全部展开" : "全部收起"}
+                    aria-label={allCollapsed ? t("全部展开") : t("全部收起")}
+                    title={allCollapsed ? t("全部展开") : t("全部收起")}
                   >
                     {allCollapsed ? (
                       <ChevronDown className="h-3.5 w-3.5" />
                     ) : (
                       <ChevronRight className="h-3.5 w-3.5" />
                     )}
-                    {allCollapsed ? "展开全部" : "收起全部"}
+                    {allCollapsed ? t("展开全部") : t("收起全部")}
                   </button>
                 )}
                 <span className="rounded-md border-2 border-ink bg-brick-4 px-2 py-1 text-xs font-bold shadow-brick-sm">
-                  {goals.length} 个目标
-                </span>
+                  {goals.length} {t("个目标")}</span>
               </div>
             </div>
 
             <div className="space-y-4">
               {goalsQ.isLoading && (
                 <div className="rounded-xl border-2 border-dashed border-ink/30 p-8 text-center text-sm text-muted-foreground">
-                  加载中…
-                </div>
+                  {t("加载中…")}</div>
               )}
 
               {!goalsQ.isLoading && goals.length === 0 && (
                 <div className="rounded-xl border-2 border-dashed border-ink/40 bg-card p-8 text-center">
-                  <p className="mb-1 text-base font-bold">还没有目标</p>
+                  <p className="mb-1 text-base font-bold">{t("还没有目标")}</p>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    让 AI 帮你把长期目标拆成一块块任务，或先载入示例看看效果
-                  </p>
+                    {t("让 AI 帮你把长期目标拆成一块块任务，或先载入示例看看效果")}</p>
                   <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
                       onClick={() => setAiOpen(true)}
                       className="border-2 border-ink bg-brick-3 text-ink font-bold shadow-brick-sm"
                     >
-                      <Wand2 className="h-4 w-4" strokeWidth={2.5} /> AI 拆解一个目标
-                    </Button>
+                      <Wand2 className="h-4 w-4" strokeWidth={2.5} /> {t("AI 拆解一个目标")}</Button>
                     <Button
                       onClick={() => seed.mutate()}
                       disabled={seed.isPending}
                       variant="ghost"
                       className="border-2 border-ink bg-background text-ink font-bold shadow-brick-sm"
                     >
-                      载入示例
-                    </Button>
+                      {t("载入示例")}</Button>
                   </div>
                 </div>
               )}
@@ -1532,7 +1534,7 @@ export default function TaskPlanner({
               ))}
 
               {userId && (
-                <InlineAdd placeholder="添加长期目标" onAdd={(v) => addGoal.mutateAsync(v)} />
+                <InlineAdd placeholder={t("添加长期目标")} onAdd={(v) => addGoal.mutateAsync(v)} />
               )}
             </div>
           </section>
@@ -1540,15 +1542,13 @@ export default function TaskPlanner({
           <section className={cn(mobileTab === "today" ? "block" : "hidden", "lg:block")}>
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-xl font-black sm:text-2xl">今天要做</h2>
+                <h2 className="text-xl font-black sm:text-2xl">{t("今天要做")}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {activeCount} 块待办 · {doneCount} 块已消除
-                </p>
+                  {activeCount} {t("块待办 ·")}{doneCount} {t("块已消除")}</p>
               </div>
               {activeCount > 0 && (
                 <span className="rounded-md border-2 border-ink bg-brick-2 px-2 py-1 text-xs font-bold shadow-brick-sm">
-                  加油
-                </span>
+                  {t("加油")}</span>
               )}
             </div>
 
@@ -1570,11 +1570,10 @@ export default function TaskPlanner({
                   <div className="mb-2 flex items-center justify-between border-t-2 border-dashed border-ink/20 pt-3">
                     <div className="flex items-center gap-2">
                       <span className="rounded-md border-2 border-ink bg-done px-2 py-0.5 text-xs font-bold shadow-brick-sm">
-                        已完成 {doneCount}
+                        {t("已完成")}{doneCount}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        今天已经消掉 {doneCount} 块 · 继续加油
-                      </span>
+                        {t("今天已经消掉")}{doneCount} {t("块 · 继续加油")}</span>
                     </div>
                     <button
                       onClick={() => {
@@ -1584,8 +1583,7 @@ export default function TaskPlanner({
                       }}
                       className="text-[11px] font-bold text-muted-foreground hover:text-ink"
                     >
-                      清空
-                    </button>
+                      {t("清空")}</button>
                   </div>
                   <div className="space-y-2">
                     {doneDaily.map((t) => (

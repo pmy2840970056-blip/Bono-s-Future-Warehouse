@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { createFileRoute, Link, getRouteApi } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ import {
   subMonths,
   subWeeks,
 } from "date-fns";
-import { zhCN } from "date-fns/locale";
+import { zhCN, enUS } from "date-fns/locale";
 import { ArrowLeft, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { fetchEntriesInRange, type DatedEntry } from "@/lib/planner-api";
 import type { BrickColor, Priority } from "@/lib/planner-types";
@@ -68,6 +69,7 @@ function fmtDate(d: Date) {
 }
 
 function CalendarPage() {
+  const { t, language, locale } = useLanguage();
   const { user } = authenticatedRoute.useRouteContext();
   const userId = user.id;
   const [view, setView] = useState<ViewMode>("week");
@@ -114,14 +116,14 @@ function CalendarPage() {
   }
 
   const title = useMemo(() => {
-    if (view === "day") return format(cursor, "yyyy年 M月 d日 EEEE", { locale: zhCN });
+    if (view === "day") return format(cursor, language === "en" ? "EEEE, MMMM d, yyyy" : "yyyy年 M月 d日 EEEE", { locale: language === "en" ? enUS : zhCN });
     if (view === "week") {
       const s = startOfWeek(cursor, { weekStartsOn: 1 });
       const e = endOfWeek(cursor, { weekStartsOn: 1 });
-      return `${format(s, "M月d日", { locale: zhCN })} — ${format(e, "M月d日", { locale: zhCN })}`;
+      return `${format(s, language === "en" ? "MMM d" : "M月d日", { locale: language === "en" ? enUS : zhCN })} — ${format(e, language === "en" ? "MMM d" : "M月d日", { locale: language === "en" ? enUS : zhCN })}`;
     }
-    return format(cursor, "yyyy年 M月", { locale: zhCN });
-  }, [view, cursor]);
+    return format(cursor, language === "en" ? "MMMM yyyy" : "yyyy年 M月", { locale: language === "en" ? enUS : zhCN });
+  }, [view, cursor, language]);
 
   return (
     <div className="min-h-screen">
@@ -131,7 +133,7 @@ function CalendarPage() {
             <Link
               to="/"
               className="grid h-10 w-10 place-items-center rounded-lg border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-              aria-label="返回"
+              aria-label={t("返回")}
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -139,8 +141,8 @@ function CalendarPage() {
               <CalendarDays className="h-5 w-5" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight">日历视图</h1>
-              <p className="text-xs text-muted-foreground">日 · 周 · 月 三种视角回看积木</p>
+              <h1 className="text-xl font-black tracking-tight">{t("日历视图")}</h1>
+              <p className="text-xs text-muted-foreground">{t("日 · 周 · 月 三种视角回看积木")}</p>
             </div>
           </div>
           <ViewSwitch view={view} onChange={setView} />
@@ -153,7 +155,7 @@ function CalendarPage() {
             <button
               onClick={() => shift(-1)}
               className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-              aria-label="上一段"
+              aria-label={t("上一段")}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -161,12 +163,11 @@ function CalendarPage() {
               onClick={() => setCursor(new Date())}
               className="rounded-md border-2 border-ink bg-brick-2 px-3 py-1.5 text-xs font-bold shadow-brick-sm hover:shadow-brick"
             >
-              回到今天
-            </button>
+              {t("回到今天")}</button>
             <button
               onClick={() => shift(1)}
               className="grid h-9 w-9 place-items-center rounded-md border-2 border-ink bg-background shadow-brick-sm hover:bg-accent"
-              aria-label="下一段"
+              aria-label={t("下一段")}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -188,10 +189,11 @@ function CalendarPage() {
 }
 
 function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
+  const { t, language, locale } = useLanguage();
   const opts: { key: ViewMode; label: string }[] = [
-    { key: "day", label: "日" },
-    { key: "week", label: "周" },
-    { key: "month", label: "月" },
+    { key: "day", label: t("日") },
+    { key: "week", label: t("周") },
+    { key: "month", label: t("月") },
   ];
   return (
     <div className="flex items-center gap-1 rounded-lg border-2 border-ink bg-background p-1 shadow-brick-sm">
@@ -226,7 +228,7 @@ function EntryChip({ e, compact }: { e: DatedEntry; compact?: boolean }) {
       <span
         className={cn("h-1.5 w-1.5 shrink-0 rounded-full border border-ink/60", priorityDot[e.priority])}
         role="img"
-        aria-label={priorityLabel[e.priority]}
+        aria-label={t(priorityLabel[e.priority])}
       />
       <span className={cn("truncate", compact ? "max-w-[80px]" : "max-w-[140px]", e.done && "line-through")}>
         {e.title}
@@ -236,6 +238,7 @@ function EntryChip({ e, compact }: { e: DatedEntry; compact?: boolean }) {
 }
 
 function DayView({ date, entries, loading }: { date: Date; entries: DatedEntry[]; loading: boolean }) {
+  const { t, language, locale } = useLanguage();
   const active = entries.filter((e) => !e.done).sort((a, b) => a.priority - b.priority);
   const done = entries.filter((e) => e.done);
   return (
@@ -248,16 +251,15 @@ function DayView({ date, entries, loading }: { date: Date; entries: DatedEntry[]
           <span className="text-lg font-black">{format(date, "d")}</span>
         </div>
         <div>
-          <div className="text-sm font-bold">{format(date, "EEEE", { locale: zhCN })}</div>
+          <div className="text-sm font-bold">{format(date, "EEEE", { locale: language === "en" ? enUS : zhCN })}</div>
           <div className="text-xs text-muted-foreground">
-            {loading ? "加载中…" : `${active.length} 块待办 · ${done.length} 块已消除`}
+            {loading ? t("加载中…") : `${active.length} 块待办 · ${done.length} 块已消除`}
           </div>
         </div>
       </div>
       {!loading && entries.length === 0 && (
         <div className="rounded-lg border-2 border-dashed border-ink/30 p-8 text-center text-sm text-muted-foreground">
-          这一天没有积木记录
-        </div>
+          {t("这一天没有积木记录")}</div>
       )}
       <div className="space-y-2">
         {active.map((e) => (
@@ -265,7 +267,7 @@ function DayView({ date, entries, loading }: { date: Date; entries: DatedEntry[]
         ))}
         {done.length > 0 && (
           <div className="mt-4 space-y-2 border-t-2 border-dashed border-ink/20 pt-4">
-            <div className="text-xs font-bold uppercase text-muted-foreground">已完成 {done.length}</div>
+            <div className="text-xs font-bold uppercase text-muted-foreground">{t("已完成")}{done.length}</div>
             {done.map((e) => (
               <DayEntryRow key={e.id} e={e} />
             ))}
@@ -277,6 +279,7 @@ function DayView({ date, entries, loading }: { date: Date; entries: DatedEntry[]
 }
 
 function DayEntryRow({ e }: { e: DatedEntry }) {
+  const { t, language, locale } = useLanguage();
   return (
     <div
       className={cn(
@@ -298,7 +301,7 @@ function DayEntryRow({ e }: { e: DatedEntry }) {
         <p className={cn("text-sm font-semibold", e.done && "text-muted-foreground line-through")}>{e.title}</p>
       </div>
       {e.done && (
-        <span className="shrink-0 rounded border-2 border-ink bg-done px-1.5 py-0.5 text-[10px] font-bold">已完成</span>
+        <span className="shrink-0 rounded border-2 border-ink bg-done px-1.5 py-0.5 text-[10px] font-bold">{t("已完成")}</span>
       )}
     </div>
   );
@@ -315,6 +318,7 @@ function WeekView({
   onPick: (d: Date) => void;
   loading: boolean;
 }) {
+  const { t, language, locale } = useLanguage();
   const start = startOfWeek(cursor, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   return (
@@ -336,7 +340,7 @@ function WeekView({
             <div className="mb-2 flex items-baseline justify-between">
               <div>
                 <div className="text-[10px] font-bold uppercase text-muted-foreground">
-                  {format(d, "EEE", { locale: zhCN })}
+                  {format(d, "EEE", { locale: language === "en" ? enUS : zhCN })}
                 </div>
                 <div className="text-xl font-black">{format(d, "d")}</div>
               </div>
@@ -352,7 +356,7 @@ function WeekView({
                 <EntryChip key={e.id} e={e} compact />
               ))}
               {items.length > 4 && (
-                <span className="text-[10px] font-bold text-muted-foreground">+{items.length - 4} 更多</span>
+                <span className="text-[10px] font-bold text-muted-foreground">+{items.length - 4} {t("更多")}</span>
               )}
               {!loading && items.length === 0 && (
                 <span className="text-[11px] text-muted-foreground">—</span>
@@ -360,8 +364,7 @@ function WeekView({
             </div>
             {active > 0 && (
               <div className="mt-auto pt-2 text-[10px] font-bold text-muted-foreground">
-                {active} 未完成
-              </div>
+                {active} {t("未完成")}</div>
             )}
           </button>
         );
@@ -385,9 +388,10 @@ function MonthView({
   onPick: (d: Date) => void;
   loading: boolean;
 }) {
+  const { t, language, locale } = useLanguage();
   const days: Date[] = [];
   for (let d = start; d <= end; d = addDays(d, 1)) days.push(d);
-  const weekHeaders = ["一", "二", "三", "四", "五", "六", "日"];
+  const weekHeaders = [t("一"), t("二"), t("三"), t("四"), t("五"), t("六"), t("日")];
   return (
     <div className="overflow-hidden rounded-xl border-2 border-ink bg-card shadow-brick">
       <div className="grid grid-cols-7 border-b-2 border-ink bg-background">

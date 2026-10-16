@@ -1,3 +1,5 @@
+import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { useLanguage } from "@/lib/i18n";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -28,6 +30,7 @@ export const Route = createFileRoute("/invite")({
 });
 
 function InvitePage() {
+  const { t, language, locale } = useLanguage();
   const apply = useServerFn(applyForInvite);
   const [email, setEmail] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -40,7 +43,7 @@ function InvitePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !purpose.trim()) {
-      toast.error("请填写邮箱和一句话用途");
+      toast.error(t("请填写邮箱和一句话用途"));
       return;
     }
     setLoading(true);
@@ -49,13 +52,13 @@ function InvitePage() {
       if (result.status === "sold_out") {
         setSoldOut(true);
       } else if (result.status === "rate_limited") {
-        toast.error("申请太频繁了，请明天再试");
+        toast.error(t("申请太频繁了，请明天再试"));
       } else {
         setCode(result.code);
         setRepeat(result.repeat);
       }
     } catch {
-      toast.error("提交失败，请稍后重试");
+      toast.error(t("提交失败，请稍后重试"));
     } finally {
       setLoading(false);
     }
@@ -66,23 +69,24 @@ function InvitePage() {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      toast.success("邀请码已复制");
+      toast.success(t("邀请码已复制"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("复制失败，请手动选中复制");
+      toast.error(t("复制失败，请手动选中复制"));
     }
   }
 
   return (
     <main className="min-h-screen grid place-items-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
+        <div className="mb-4 flex justify-end"><LanguageSwitch /></div>
         <div className="mb-6 flex items-center justify-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm">
             <Sparkles className="h-5 w-5" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-2xl font-black">申请内测邀请码</h1>
-            <p className="text-xs text-muted-foreground">把长期目标拆成今天的一块</p>
+            <h1 className="text-2xl font-black">{t("申请内测邀请码")}</h1>
+            <p className="text-xs text-muted-foreground">{t("把长期目标拆成今天的一块")}</p>
           </div>
         </div>
 
@@ -90,7 +94,7 @@ function InvitePage() {
           {code ? (
             <div className="space-y-4 text-center">
               <p className="text-sm font-bold">
-                {repeat ? "你之前已经申请过，这就是你的邀请码：" : "申请成功，这是你的邀请码："}
+                {repeat ? t("你之前已经申请过，这就是你的邀请码：") : t("申请成功，这是你的邀请码：")}
               </p>
               <div className="rounded-lg border-2 border-ink bg-brick-2 px-4 py-5 font-mono text-2xl font-black tracking-widest">
                 {code}
@@ -102,35 +106,32 @@ function InvitePage() {
                 className="w-full border-2 border-ink font-bold"
               >
                 {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                {copied ? "已复制" : "复制邀请码"}
+                {copied ? t("已复制") : t("复制邀请码")}
               </Button>
               <Button
                 asChild
                 className="w-full border-2 border-ink bg-brick-1 text-ink font-bold shadow-brick-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-brick"
               >
-                <Link to="/auth">去注册</Link>
+                <Link to="/auth">{t("去注册")}</Link>
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                注册时选「邮箱」并填入这个邀请码即可。限 1 人使用，90 天内有效。
-              </p>
+                {t("注册时选「邮箱」并填入这个邀请码即可。限 1 人使用，90 天内有效。")}</p>
             </div>
           ) : soldOut ? (
             <div className="space-y-3 text-center">
-              <p className="text-sm font-bold">本批内测名额已发完</p>
+              <p className="text-sm font-bold">{t("本批内测名额已发完")}</p>
               <p className="text-xs text-muted-foreground">
-                我们会陆续放出新名额，欢迎稍后再来看看。
-              </p>
+                {t("我们会陆续放出新名额，欢迎稍后再来看看。")}</p>
               <Button asChild variant="outline" className="w-full border-2 border-ink font-bold">
-                <Link to="/auth">已有邀请码，去注册</Link>
+                <Link to="/auth">{t("已有邀请码，去注册")}</Link>
               </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="rounded-md border-2 border-ink bg-brick-3/40 px-3 py-2 text-[11px] font-bold">
-                每个邮箱可领一个邀请码，限 1 人使用，90 天内有效。提交后立刻显示。
-              </p>
+                {t("每个邮箱可领一个邀请码，限 1 人使用，90 天内有效。提交后立刻显示。")}</p>
               <div>
-                <Label htmlFor="apply-email">邮箱</Label>
+                <Label htmlFor="apply-email">{t("邮箱")}</Label>
                 <Input
                   id="apply-email"
                   type="email"
@@ -143,7 +144,7 @@ function InvitePage() {
                 />
               </div>
               <div>
-                <Label htmlFor="apply-purpose">一句话用途</Label>
+                <Label htmlFor="apply-purpose">{t("一句话用途")}</Label>
                 <Textarea
                   id="apply-purpose"
                   required
@@ -151,7 +152,7 @@ function InvitePage() {
                   rows={3}
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="例如：想用它把考研计划拆到每天"
+                  placeholder={t("例如：想用它把考研计划拆到每天")}
                   className="border-2 border-ink"
                 />
                 <p className="mt-1 text-right text-[11px] text-muted-foreground">
@@ -163,7 +164,7 @@ function InvitePage() {
                 disabled={loading}
                 className="w-full border-2 border-ink bg-brick-1 text-ink font-bold shadow-brick-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-brick"
               >
-                {loading ? "提交中…" : "领取邀请码"}
+                {loading ? t("提交中…") : t("领取邀请码")}
               </Button>
             </form>
           )}
@@ -171,8 +172,7 @@ function InvitePage() {
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
           <Link to="/auth" className="underline">
-            返回登录
-          </Link>
+            {t("返回登录")}</Link>
         </p>
       </div>
     </main>
