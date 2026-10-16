@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ export function AiGoalDialog({
   userId: string;
   goalsCount: number;
 }) {
+  const { t, language, locale } = useLanguage();
   const qc = useQueryClient();
   const [goalTitle, setGoalTitle] = useState("");
   const [tree, setTree] = useState<Tree | null>(null);
@@ -56,7 +58,7 @@ export function AiGoalDialog({
       sfxPop();
       setTree(data);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "AI 拆解失败"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("AI 拆解失败")),
   });
 
   const importM = useMutation({
@@ -75,11 +77,11 @@ export function AiGoalDialog({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals", userId] });
       sfxCheer();
-      toast.success("已导入目标树");
+      toast.success(t("已导入目标树"));
       reset();
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "导入失败"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : t("导入失败")),
   });
 
   function reset() {
@@ -100,7 +102,7 @@ export function AiGoalDialog({
   }
   function addSub() {
     if (!tree) return;
-    setTree({ ...tree, subgoals: [...tree.subgoals, { title: "新的子目标", tasks: ["新任务"] }] });
+    setTree({ ...tree, subgoals: [...tree.subgoals, { title: t("新的子目标"), tasks: [t("新任务")] }] });
   }
   function updateTask(si: number, ti: number, title: string) {
     if (!tree) return;
@@ -125,7 +127,7 @@ export function AiGoalDialog({
     setTree({
       ...tree,
       subgoals: tree.subgoals.map((s, i) =>
-        i === si ? { ...s, tasks: [...s.tasks, "新任务"] } : s,
+        i === si ? { ...s, tasks: [...s.tasks, t("新任务")] } : s,
       ),
     });
   }
@@ -152,7 +154,7 @@ export function AiGoalDialog({
     }
   }
   const timelineFmt = (d: Date) =>
-    d.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", weekday: "short" });
+    d.toLocaleDateString(locale, { month: "numeric", day: "numeric", weekday: "short" });
 
   return (
     <Dialog
@@ -168,30 +170,27 @@ export function AiGoalDialog({
             <div className="grid h-8 w-8 place-items-center rounded-md border-2 border-ink bg-brick-3 shadow-brick-sm">
               <Wand2 className="h-4 w-4" strokeWidth={2.5} />
             </div>
-            AI 目标拆解
-          </DialogTitle>
+            {t("AI 目标拆解")}</DialogTitle>
           <DialogDescription>
-            输入一个长期目标，AI 会拆成子目标和今天就能动手的一块块任务。你可以编辑后再导入。
-          </DialogDescription>
+            {t("输入一个长期目标，AI 会拆成子目标和今天就能动手的一块块任务。你可以编辑后再导入。")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           <div>
             <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              长期目标
-            </label>
+              {t("长期目标")}</label>
             <div className="flex gap-2">
               <Textarea
                 value={goalTitle}
                 onChange={(e) => setGoalTitle(e.target.value)}
-                placeholder="例如：半年内跑完一次半程马拉松 / 三个月内做出一个可上线的独立产品"
+                placeholder={t("例如：半年内跑完一次半程马拉松 / 三个月内做出一个可上线的独立产品")}
                 className="min-h-[64px] border-2 border-ink"
                 maxLength={200}
               />
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-muted-foreground">颜色</span>
+                <span className="text-[11px] font-bold text-muted-foreground">{t("颜色")}</span>
                 {CYCLE.map((c) => (
                   <button
                     key={c}
@@ -212,11 +211,10 @@ export function AiGoalDialog({
               >
                 {decomposeM.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> AI 拆解中…
-                  </>
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t("AI 拆解中…")}</>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4" /> {tree ? "重新拆解" : "AI 拆解"}
+                    <Sparkles className="h-4 w-4" /> {tree ? t("重新拆解") : t("AI 拆解")}
                   </>
                 )}
               </Button>
@@ -225,24 +223,21 @@ export function AiGoalDialog({
 
           {decomposeM.isPending && !tree && (
             <div className="rounded-lg border-2 border-dashed border-ink/30 p-8 text-center text-sm text-muted-foreground">
-              正在把「{goalTitle}」拆成一块块能动手的任务…
-            </div>
+              {t("正在把「")}{goalTitle}{t("」拆成一块块能动手的任务…")}</div>
           )}
 
           {tree && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  AI 建议 · 可编辑
-                </p>
+                  {t("AI 建议 · 可编辑")}</p>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={addSub}
                   className="h-7 border-2 border-ink bg-background text-xs font-bold shadow-brick-sm"
                 >
-                  <Plus className="h-3 w-3" strokeWidth={3} /> 加子目标
-                </Button>
+                  <Plus className="h-3 w-3" strokeWidth={3} /> {t("加子目标")}</Button>
               </div>
 
               {tree.subgoals.map((s, si) => (
@@ -264,24 +259,24 @@ export function AiGoalDialog({
                     <button
                       onClick={() => removeSub(si)}
                       className="opacity-40 hover:opacity-100"
-                      aria-label="删除子目标"
+                      aria-label={t("删除子目标")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="ml-8 space-y-1.5">
-                    {s.tasks.map((t, ti) => (
+                    {s.tasks.map((taskTitle, ti) => (
                       <div key={ti} className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold text-muted-foreground w-4">·</span>
                         <Input
-                          value={t}
+                          value={taskTitle}
                           onChange={(e) => updateTask(si, ti, e.target.value)}
                           className="h-7 border-2 border-ink text-sm"
                         />
                         <button
                           onClick={() => removeTask(si, ti)}
                           className="opacity-30 hover:opacity-100"
-                          aria-label="删除任务"
+                          aria-label={t("删除任务")}
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -291,8 +286,7 @@ export function AiGoalDialog({
                       onClick={() => addTask(si)}
                       className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-ink"
                     >
-                      <Plus className="h-3 w-3" strokeWidth={3} /> 加任务
-                    </button>
+                      <Plus className="h-3 w-3" strokeWidth={3} /> {t("加任务")}</button>
                   </div>
                 </div>
               ))}
@@ -302,10 +296,9 @@ export function AiGoalDialog({
             <div className="rounded-lg border-2 border-ink bg-accent/40 p-4 shadow-brick-sm space-y-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  即将创建
-                </p>
+                  {t("即将创建")}</p>
                 <p className="mt-1 text-sm">
-                  长期目标{" "}
+                  {t("长期目标")}{" "}
                   <span
                     className={cn(
                       "inline-block rounded border-2 border-ink px-1.5 py-0.5 text-xs font-bold",
@@ -317,18 +310,15 @@ export function AiGoalDialog({
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
                   <span className="rounded-md border-2 border-ink bg-card px-2 py-1 shadow-brick-sm">
-                    {subCount} 个子目标
-                  </span>
+                    {subCount} {t("个子目标")}</span>
                   <span className="rounded-md border-2 border-ink bg-card px-2 py-1 shadow-brick-sm">
-                    {taskCount} 块每日任务
-                  </span>
+                    {taskCount} {t("块每日任务")}</span>
                 </div>
               </div>
 
               <div>
                 <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  示例时间表 · 每天一块（可后续调整）
-                </p>
+                  {t("示例时间表 · 每天一块（可后续调整）")}</p>
                 <ul className="space-y-1 text-xs">
                   {timeline.slice(0, 6).map((row, i) => (
                     <li key={i} className="flex items-center gap-2">
@@ -343,15 +333,13 @@ export function AiGoalDialog({
                   ))}
                   {timeline.length > 6 && (
                     <li className="pl-[5.5rem] text-muted-foreground">
-                      …还有 {timeline.length - 6} 块，共 {timeline.length} 天
-                    </li>
+                      {t("…还有")}{timeline.length - 6} {t("块，共")}{timeline.length} {t("天")}</li>
                   )}
                 </ul>
               </div>
 
               <p className="text-[11px] text-muted-foreground">
-                导入后目标和任务会保存到你的目标列表，任务不会自动放进今日待办 —— 你随时可以拖进来。
-              </p>
+                {t("导入后目标和任务会保存到你的目标列表，任务不会自动放进今日待办 —— 你随时可以拖进来。")}</p>
             </div>
           )}
         </div>
@@ -365,8 +353,7 @@ export function AiGoalDialog({
                 disabled={importM.isPending}
                 className="border-2 border-ink bg-background font-bold shadow-brick-sm"
               >
-                返回修改
-              </Button>
+                {t("返回修改")}</Button>
               <Button
                 onClick={() => importM.mutate()}
                 disabled={importM.isPending}
@@ -374,12 +361,10 @@ export function AiGoalDialog({
               >
                 {importM.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> 导入中…
-                  </>
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t("导入中…")}</>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4" strokeWidth={3} /> 确认导入
-                  </>
+                    <Plus className="h-4 w-4" strokeWidth={3} /> {t("确认导入")}</>
                 )}
               </Button>
             </>
@@ -390,15 +375,13 @@ export function AiGoalDialog({
                 onClick={() => onOpenChange(false)}
                 className="border-2 border-ink bg-background font-bold shadow-brick-sm"
               >
-                取消
-              </Button>
+                {t("取消")}</Button>
               <Button
                 onClick={() => setConfirming(true)}
                 disabled={!canImport}
                 className="border-2 border-ink bg-brick-2 text-ink font-bold shadow-brick"
               >
-                预览并导入
-              </Button>
+                {t("预览并导入")}</Button>
             </>
           )}
         </DialogFooter>

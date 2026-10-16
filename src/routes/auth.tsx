@@ -1,3 +1,5 @@
+import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { useLanguage } from "@/lib/i18n";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,28 +22,29 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: AUTH_TITLE },
       { property: "og:description", content: AUTH_DESC },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: AuthPage,
 });
 
-function friendlyInviteError(msg: string): string {
+function friendlyInviteError(msg: string, t: (text: string) => string): string {
   const m = msg.toLowerCase();
-  if (msg.includes("INVITE_CODE_REQUIRED")) return "请填写邀请码";
-  if (msg.includes("INVITE_CODE_INVALID")) return "邀请码无效，请联系邀请你的人";
-  if (msg.includes("INVITE_CODE_EXPIRED")) return "邀请码已过期";
-  if (msg.includes("INVITE_CODE_EXHAUSTED")) return "邀请码已被用完（每个码限一人使用）";
+  if (msg.includes("INVITE_CODE_REQUIRED")) return t("请填写邀请码");
+  if (msg.includes("INVITE_CODE_INVALID")) return t("邀请码无效，请联系邀请你的人");
+  if (msg.includes("INVITE_CODE_EXPIRED")) return t("邀请码已过期");
+  if (msg.includes("INVITE_CODE_EXHAUSTED")) return t("邀请码已被用完（每个码限一人使用）");
   if (m.includes("sms") || m.includes("phone provider") || m.includes("phone_provider"))
-    return "短信登录暂未开放，请使用邮箱或 Google 登录";
+    return t("短信登录暂未开放，请使用邮箱或 Google 登录");
   if (m.includes("weak") || m.includes("pwned"))
-    return "这个密码太常见了，请换一个更复杂的密码（建议大小写+数字+符号，8 位以上）";
-  if (m.includes("invalid login credentials")) return "邮箱或密码不正确";
+    return t("这个密码太常见了，请换一个更复杂的密码（建议大小写+数字+符号，8 位以上）");
+  if (m.includes("invalid login credentials")) return t("邮箱或密码不正确");
   if (m.includes("already registered") || m.includes("already been registered"))
-    return "该邮箱已注册，请直接登录";
-  if (m.includes("password should be at least")) return "密码至少需要 6 位";
-  if (m.includes("email address") && m.includes("invalid")) return "邮箱格式不正确";
-  if (m.includes("rate limit") || m.includes("too many")) return "操作过于频繁，请稍后再试";
+    return t("该邮箱已注册，请直接登录");
+  if (m.includes("password should be at least")) return t("密码至少需要 6 位");
+  if (m.includes("email address") && m.includes("invalid")) return t("邮箱格式不正确");
+  if (m.includes("rate limit") || m.includes("too many")) return t("操作过于频繁，请稍后再试");
   return msg;
 }
 
@@ -59,6 +62,7 @@ const COUNTRY_CODES = [
 ];
 
 function AuthPage() {
+  const { t, language, locale } = useLanguage();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [method, setMethod] = useState<"email" | "phone">("email");
@@ -99,7 +103,7 @@ function AuthPage() {
       if (mode === "signup") {
         const code = inviteCode.trim().toUpperCase();
         if (!code) {
-          toast.error("请填写邀请码");
+          toast.error(t("请填写邀请码"));
           setLoading(false);
           return;
         }
@@ -117,21 +121,21 @@ function AuthPage() {
         if (error) throw error;
         const { data: sess } = await supabase.auth.getSession();
         if (!sess.session) {
-          toast.success("注册成功！请前往邮箱点击验证链接后再登录");
+          toast.success(t("注册成功！请前往邮箱点击验证链接后再登录"));
           setMode("signin");
           setLoading(false);
           return;
         }
-        toast.success("注册成功！正在进入…");
+        toast.success(t("注册成功！正在进入…"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success("欢迎回来");
+        toast.success(t("欢迎回来"));
       }
       navigate({ to: "/", replace: true });
     } catch (err) {
-      const raw = err instanceof Error ? err.message : "出错了，请重试";
-      toast.error(friendlyInviteError(raw));
+      const raw = err instanceof Error ? err.message : t("出错了，请重试");
+      toast.error(friendlyInviteError(raw, t));
     } finally {
       setLoading(false);
     }
@@ -140,11 +144,11 @@ function AuthPage() {
   async function handleSendOtp() {
     const digits = phone.trim().replace(/\D/g, "");
     if (!digits) {
-      toast.error("请输入手机号");
+      toast.error(t("请输入手机号"));
       return;
     }
     if (mode === "signup" && !inviteCode.trim()) {
-      toast.error("请填写邀请码");
+      toast.error(t("请填写邀请码"));
       return;
     }
     setLoading(true);
@@ -168,10 +172,10 @@ function AuthPage() {
       if (error) throw error;
       setOtpSent(true);
       setCooldown(60);
-      toast.success("验证码已发送，请查收短信");
+      toast.success(t("验证码已发送，请查收短信"));
     } catch (err) {
-      const raw = err instanceof Error ? err.message : "发送失败";
-      toast.error(friendlyInviteError(raw));
+      const raw = err instanceof Error ? err.message : t("发送失败");
+      toast.error(friendlyInviteError(raw, t));
     } finally {
       setLoading(false);
     }
@@ -180,7 +184,7 @@ function AuthPage() {
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     if (!otp.trim()) {
-      toast.error("请输入验证码");
+      toast.error(t("请输入验证码"));
       return;
     }
     setLoading(true);
@@ -191,11 +195,11 @@ function AuthPage() {
         type: "sms",
       });
       if (error) throw error;
-      toast.success(mode === "signup" ? "注册成功！正在进入…" : "欢迎回来");
+      toast.success(mode === "signup" ? t("注册成功！正在进入…") : t("欢迎回来"));
       navigate({ to: "/", replace: true });
     } catch (err) {
-      const raw = err instanceof Error ? err.message : "验证失败";
-      toast.error(friendlyInviteError(raw));
+      const raw = err instanceof Error ? err.message : t("验证失败");
+      toast.error(friendlyInviteError(raw, t));
     } finally {
       setLoading(false);
     }
@@ -203,7 +207,7 @@ function AuthPage() {
 
   async function handleGoogle() {
     if (mode === "signup") {
-      toast.error("首次使用请先用邮箱或手机号+邀请码注册，之后可用 Google 登录");
+      toast.error(t("首次使用请先用邮箱或手机号+邀请码注册，之后可用 Google 登录"));
       return;
     }
     setLoading(true);
@@ -215,7 +219,7 @@ function AuthPage() {
       if (result.redirected) return;
       navigate({ to: "/", replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Google 登录失败");
+      toast.error(err instanceof Error ? err.message : t("Google 登录失败"));
       setLoading(false);
     }
   }
@@ -229,13 +233,14 @@ function AuthPage() {
   return (
     <main className="min-h-screen grid place-items-center bg-background px-4 py-10">
       <div className="w-full max-w-md">
+        <div className="mb-4 flex justify-end"><LanguageSwitch /></div>
         <div className="mb-6 flex items-center justify-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-lg border-2 border-ink bg-brick-1 shadow-brick-sm">
             <Sparkles className="h-5 w-5" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-2xl font-black">积木清单</h1>
-            <p className="text-xs text-muted-foreground">把长期目标拆成今天的一块</p>
+            <h1 className="text-2xl font-black">{t("积木清单")}</h1>
+            <p className="text-xs text-muted-foreground">{t("把长期目标拆成今天的一块")}</p>
           </div>
         </div>
 
@@ -246,15 +251,13 @@ function AuthPage() {
               onClick={() => setMode("signin")}
               type="button"
             >
-              登录
-            </button>
+              {t("登录")}</button>
             <button
               className={`flex-1 rounded-md py-1.5 text-sm font-bold ${mode === "signup" ? "bg-brick-2" : ""}`}
               onClick={() => setMode("signup")}
               type="button"
             >
-              注册
-            </button>
+              {t("注册")}</button>
           </div>
 
           <div className="mb-4 flex gap-2 text-xs">
@@ -263,33 +266,31 @@ function AuthPage() {
               onClick={() => switchMethod("email")}
               className={`flex-1 rounded-md border-2 border-ink py-1.5 font-bold ${method === "email" ? "bg-brick-4 shadow-brick-sm" : "bg-background text-muted-foreground"}`}
             >
-              邮箱
-            </button>
+              {t("邮箱")}</button>
             <button
               type="button"
               onClick={() => switchMethod("phone")}
               className={`flex-1 rounded-md border-2 border-ink py-1.5 font-bold ${method === "phone" ? "bg-brick-4 shadow-brick-sm" : "bg-background text-muted-foreground"}`}
             >
-              手机号
-            </button>
+              {t("手机号")}</button>
           </div>
 
           {method === "email" ? (
             <form onSubmit={handleEmailSubmit} className="space-y-3">
               {mode === "signup" && (
                 <div>
-                  <Label htmlFor="name">显示名（可选）</Label>
+                  <Label htmlFor="name">{t("显示名（可选）")}</Label>
                   <Input
                     id="name"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="小明"
+                    placeholder={t("小明")}
                     className="border-2 border-ink"
                   />
                 </div>
               )}
               <div>
-                <Label htmlFor="email">邮箱</Label>
+                <Label htmlFor="email">{t("邮箱")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -300,7 +301,7 @@ function AuthPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="password">密码</Label>
+                <Label htmlFor="password">{t("密码")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -313,21 +314,19 @@ function AuthPage() {
               </div>
               {mode === "signup" && (
                 <div>
-                  <Label htmlFor="invite">邀请码</Label>
+                  <Label htmlFor="invite">{t("邀请码")}</Label>
                   <Input
                     id="invite"
                     required
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    placeholder="向邀请你的人索取"
+                    placeholder={t("向邀请你的人索取")}
                     className="border-2 border-ink font-mono tracking-wider"
                     autoCapitalize="characters"
                   />
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    内测阶段仅限受邀用户注册。没有邀请码？
-                    <Link to="/invite" className="font-bold underline">
-                      申请一个
-                    </Link>
+                    {t("内测阶段仅限受邀用户注册。没有邀请码？")}<Link to="/invite" className="font-bold underline">
+                      {t("申请一个")}</Link>
                   </p>
                 </div>
               )}
@@ -336,38 +335,37 @@ function AuthPage() {
                 disabled={loading}
                 className="w-full border-2 border-ink bg-brick-1 text-ink font-bold shadow-brick-sm hover:shadow-brick hover:-translate-y-0.5 hover:-translate-x-0.5 transition-all"
               >
-                {mode === "signin" ? "登录" : "创建账号"}
+                {mode === "signin" ? t("登录") : t("创建账号")}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-3">
               <div className="rounded-md border-2 border-ink bg-brick-3/40 px-3 py-2 text-[11px] font-bold">
-                短信验证码登录暂未开放，请先使用「邮箱」或 Google 登录。
-              </div>
+                {t("短信验证码登录暂未开放，请先使用「邮箱」或 Google 登录。")}</div>
               {mode === "signup" && (
                 <div>
-                  <Label htmlFor="pname">显示名（可选）</Label>
+                  <Label htmlFor="pname">{t("显示名（可选）")}</Label>
                   <Input
                     id="pname"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="小明"
+                    placeholder={t("小明")}
                     className="border-2 border-ink"
                   />
                 </div>
               )}
               <div>
-                <Label htmlFor="phone">手机号</Label>
+                <Label htmlFor="phone">{t("手机号")}</Label>
                 <div className="flex gap-2">
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
                     className="rounded-md border-2 border-ink bg-background px-2 text-sm font-bold"
-                    aria-label="国家/地区区号"
+                    aria-label={t("国家/地区区号")}
                   >
                     {COUNTRY_CODES.map((c) => (
                       <option key={c.code} value={c.code}>
-                        {c.code} {c.label}
+                        {c.code} {t(c.label)}
                       </option>
                     ))}
                   </select>
@@ -385,20 +383,20 @@ function AuthPage() {
               </div>
               {mode === "signup" && (
                 <div>
-                  <Label htmlFor="pinvite">邀请码</Label>
+                  <Label htmlFor="pinvite">{t("邀请码")}</Label>
                   <Input
                     id="pinvite"
                     required
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    placeholder="向邀请你的人索取"
+                    placeholder={t("向邀请你的人索取")}
                     className="border-2 border-ink font-mono tracking-wider"
                     autoCapitalize="characters"
                   />
                 </div>
               )}
               <div>
-                <Label htmlFor="otp">验证码</Label>
+                <Label htmlFor="otp">{t("验证码")}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="otp"
@@ -406,7 +404,7 @@ function AuthPage() {
                     maxLength={6}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                    placeholder="6 位验证码"
+                    placeholder={t("6 位验证码")}
                     className="flex-1 border-2 border-ink font-mono tracking-widest"
                     disabled={!otpSent}
                   />
@@ -417,7 +415,7 @@ function AuthPage() {
                     variant="outline"
                     className="shrink-0 border-2 border-ink font-bold"
                   >
-                    {cooldown > 0 ? `${cooldown}s` : otpSent ? "重新发送" : "获取验证码"}
+                    {cooldown > 0 ? `${cooldown}s` : otpSent ? t("重新发送") : t("获取验证码")}
                   </Button>
                 </div>
               </div>
@@ -426,17 +424,16 @@ function AuthPage() {
                 disabled={loading || !otpSent}
                 className="w-full border-2 border-ink bg-brick-1 text-ink font-bold shadow-brick-sm hover:shadow-brick hover:-translate-y-0.5 hover:-translate-x-0.5 transition-all"
               >
-                {mode === "signin" ? "登录" : "创建账号"}
+                {mode === "signin" ? t("登录") : t("创建账号")}
               </Button>
               <p className="text-[11px] text-muted-foreground">
-                我们正在接入短信服务，开通后手机号即可直接收验证码登录。
-              </p>
+                {t("我们正在接入短信服务，开通后手机号即可直接收验证码登录。")}</p>
             </form>
           )}
 
           <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
             <div className="h-px flex-1 bg-ink/20" />
-            <span>或</span>
+            <span>{t("或")}</span>
             <div className="h-px flex-1 bg-ink/20" />
           </div>
 
@@ -447,13 +444,11 @@ function AuthPage() {
             onClick={handleGoogle}
             className="w-full border-2 border-ink font-bold"
           >
-            使用 Google 继续
-          </Button>
+            {t("使用 Google 继续")}</Button>
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          注册即表示同意我们的服务条款和隐私政策。
-        </p>
+          {t("注册即表示同意我们的服务条款和隐私政策。")}</p>
       </div>
     </main>
   );

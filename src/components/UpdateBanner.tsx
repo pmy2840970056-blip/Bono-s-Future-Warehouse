@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { useVersionCheck } from "@/hooks/useVersionCheck";
@@ -5,6 +6,7 @@ import { useVersionCheck } from "@/hooks/useVersionCheck";
 const DISMISS_KEY = "brick-planner:update-dismissed-version";
 
 export function UpdateBanner() {
+  const { t, language, locale } = useLanguage();
   const hasUpdate = useVersionCheck();
   const [dismissed, setDismissed] = useState(false);
 
@@ -37,14 +39,14 @@ export function UpdateBanner() {
           className="flex flex-1 items-center gap-2 text-left text-xs font-bold sm:text-sm"
         >
           <RefreshCw className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-          <span className="truncate">发现新版本，点此刷新体验最新内容</span>
+          <span className="truncate">{t("发现新版本，点此刷新体验最新内容")}</span>
         </button>
         <button
           type="button"
           onClick={dismiss}
           className="grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 border-ink bg-background/60 hover:bg-background"
-          aria-label="稍后再说"
-          title="稍后再说"
+          aria-label={t("稍后再说")}
+          title={t("稍后再说")}
         >
           <X className="h-3.5 w-3.5" />
         </button>
